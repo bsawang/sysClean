@@ -115,5 +115,7 @@
   "software.success": "已卸载",
   "software.failed": "失败",
   "software.uninstalling": "正在卸载",
-  "software.uninstall_log": "卸载日志"
+  "software.uninstall_log": "卸载日志",
+  "software.sort_date": "安装日期",
+  "software.sort_size": "大小"
 }

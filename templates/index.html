@@ -511,18 +511,23 @@
           <input type="text" id="software-filter" oninput="filterSoftware()" placeholder="Filter..." style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;color:#c9d1d9;font-size:0.88rem">
         </div>
 
-        <div class="action-buttons" style="border-top:none;padding-top:0;margin-bottom:12px">
-          <button class="btn btn-ghost btn-sm" onclick="selectAllSoftware(true)" data-i18n="btn.select_all">Select All</button>
-          <button class="btn btn-ghost btn-sm" onclick="selectAllSoftware(false)" data-i18n="btn.deselect_all">Deselect All</button>
-          <button class="btn btn-danger btn-sm btn-operation" onclick="startUninstall()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            <span data-i18n="software.uninstall">Uninstall Selected</span>
-          </button>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button class="btn btn-ghost btn-sm" onclick="sortSoftware('date')" style="font-size:0.78rem" id="sort-date"><span data-i18n="software.sort_date">安装日期</span> ↓</button>
+          <button class="btn btn-ghost btn-sm" onclick="sortSoftware('size')" style="font-size:0.78rem" id="sort-size"><span data-i18n="software.sort_size">大小</span> ↓</button>
         </div>
 
         <div id="software-loading" style="text-align:center;padding:32px;color:#8b949e" data-i18n="software.loading">Loading...</div>
 
         <div id="software-list" style="max-height:500px;overflow-y:auto;border:1px solid #21262d;border-radius:8px;"></div>
+
+        <div class="action-buttons" style="margin-top:12px;padding-top:12px">
+          <button class="btn btn-ghost btn-sm" onclick="selectAllSoftware(true)" data-i18n="btn.select_all">全选</button>
+          <button class="btn btn-ghost btn-sm" onclick="selectAllSoftware(false)" data-i18n="btn.deselect_all">全不选</button>
+          <button class="btn btn-danger btn-sm btn-operation" onclick="startUninstall()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span data-i18n="software.uninstall">卸载选中</span>
+          </button>
+        </div>
 
         <div id="software-progress" class="hidden" style="margin-top:16px">
           <div class="progress-section">
@@ -1519,10 +1524,47 @@ function renderSoftwareList(programs) {
     document.getElementById('software-list').innerHTML = html || '<div style="padding:16px;text-align:center;color:#8b949e">' + _t('software.empty') + '</div>';
 }
 
+var _softwareSortField = 'name';
+var _softwareSortAsc = false;
+
 function filterSoftware() {
+    renderSoftwareList(getFilteredSoftware());
+}
+
+function sortSoftware(field) {
+    if (_softwareSortField === field) {
+        _softwareSortAsc = !_softwareSortAsc;
+    } else {
+        _softwareSortField = field;
+        _softwareSortAsc = field === 'date' ? false : true;
+    }
+    // Update button indicators
+    document.getElementById('sort-date').textContent = _t('software.sort_date') + ' ' + (field === 'date' ? (_softwareSortAsc ? '↑' : '↓') : '↓');
+    document.getElementById('sort-size').textContent = _t('software.sort_size') + ' ' + (field === 'size' ? (_softwareSortAsc ? '↑' : '↓') : '↓');
+    renderSoftwareList(getFilteredSoftware());
+}
+
+function getFilteredSoftware() {
     var q = document.getElementById('software-filter').value.toLowerCase();
-    var filtered = allPrograms.filter(function(p) { return p.name.toLowerCase().indexOf(q) !== -1; });
-    renderSoftwareList(filtered);
+    var list = allPrograms.filter(function(p) { return p.name.toLowerCase().indexOf(q) !== -1; });
+    var field = _softwareSortField;
+    list.sort(function(a, b) {
+        var va, vb;
+        if (field === 'date') {
+            va = a.install_date || '00000000';
+            vb = b.install_date || '00000000';
+        } else if (field === 'size') {
+            va = a.estimated_size || 0;
+            vb = b.estimated_size || 0;
+        } else {
+            va = a.name.toLowerCase();
+            vb = b.name.toLowerCase();
+        }
+        if (va < vb) return _softwareSortAsc ? -1 : 1;
+        if (va > vb) return _softwareSortAsc ? 1 : -1;
+        return 0;
+    });
+    return list;
 }
 
 function selectAllSoftware(select) {
