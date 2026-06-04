@@ -471,7 +471,7 @@ function renderDiskCardHtml(data) {
   else if (pct >= 75) cls = 'warning';
   var sandboxBadge = '';
   if (data.sandbox) {
-    sandboxBadge = '<div style="font-size:0.72rem;color:#d29922;margin-top:6px;text-align:center;">\u{1F6FE} <span data-i18n="sandbox.mode">Sandbox Mode</span></div>';
+    sandboxBadge = '<div style="font-size:0.72rem;color:#d29922;margin-top:6px;text-align:center;">🛾 <span data-i18n="sandbox.mode">Sandbox Mode</span></div>';
   }
   return '<div class="disk-card">'
     + '<div class="disk-header">'
@@ -753,7 +753,7 @@ function confirmClean() {
       document.getElementById('modal-warning-box').style.display = 'none';
       document.getElementById('confirm-actions').innerHTML =
         '<button class="btn btn-ghost" onclick="showView(\'results\')">' + _t('btn.cancel') + '</button>'
-        + '<button class="btn btn-primary" onclick="toggleSandbox()" style="background:#d29922">\u{1F6FE} ' + _t('sandbox.exit') + '</button>';
+        + '<button class="btn btn-primary" onclick="toggleSandbox()" style="background:#d29922">🛾 ' + _t('sandbox.exit') + '</button>';
       showView('confirm');
     } else {
       var groups = {};
