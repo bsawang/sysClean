@@ -70,8 +70,8 @@ a:hover { text-decoration: underline; }
 }
 
 .sidebar {
-  width: 240px;
-  min-width: 240px;
+  width: 260px;
+  min-width: 260px;
   background: #161b22;
   border-right: 1px solid #21262d;
   padding: 16px;
