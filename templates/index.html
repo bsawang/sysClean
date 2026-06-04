@@ -122,7 +122,7 @@
       </label>
 
       <!-- Start Scan button -->
-      <button class="btn btn-primary btn-block" onclick="startScan()" style="margin-top:12px">
+      <button class="btn btn-primary btn-block btn-operation" onclick="startScan()" style="margin-top:12px">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
@@ -436,6 +436,49 @@ function riskTag(risk) {
   var cls = {safe:'risk-safe', caution:'risk-caution', danger:'risk-danger'}[risk] || 'risk-safe';
   var key = {safe:'risk.safe', caution:'risk.caution', danger:'risk.danger'}[risk] || 'risk.safe';
   return '<span class="risk-tag ' + cls + '">' + _t(key) + '</span>';
+}
+
+// ====================================================================
+// Global operation state (isBusy)
+// ====================================================================
+let isBusy = false;
+let busyPollInterval = null;
+const BUSY_MSG = '当前有操作进行中，请等待完成';
+
+function startBusyPolling() {
+    if (busyPollInterval) return;
+    busyPollInterval = setInterval(checkBusy, 2000);
+}
+
+function stopBusyPolling() {
+    if (busyPollInterval) {
+        clearInterval(busyPollInterval);
+        busyPollInterval = null;
+    }
+}
+
+function checkBusy() {
+    fetch('/api/operation/status')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            isBusy = d.busy;
+            var admin = d.admin;
+            updateButtons();
+            updateAdminHints(admin);
+            if (!isBusy) stopBusyPolling();
+        });
+}
+
+function updateButtons() {
+    document.querySelectorAll('.btn-operation').forEach(function(btn) {
+        btn.disabled = isBusy;
+    });
+}
+
+function updateAdminHints(admin) {
+    document.querySelectorAll('.admin-hint').forEach(function(el) {
+        el.style.display = admin ? 'none' : 'inline';
+    });
 }
 
 // ====================================================================
@@ -1155,6 +1198,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }).catch(function(e) { console.error('refreshDiskCard:', e); });
 
   checkSandbox();
+  checkBusy();
   refreshDiskCard();
 
   // Restore previous state if available
