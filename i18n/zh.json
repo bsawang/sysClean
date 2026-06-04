@@ -99,5 +99,16 @@
   "search.rebuilding": "正在重建中...",
   "search.stopped": "服务已停止",
   "search.ready": "正常",
-  "search.confirm": "确定要重建搜索索引吗？\n\n重建期间 Windows 搜索将不可用，索引重建过程可能需要数小时，且 CPU 占用较高。\n\n此操作不可撤销！"
+  "search.confirm": "确定要重建搜索索引吗？\n\n重建期间 Windows 搜索将不可用，索引重建过程可能需要数小时，且 CPU 占用较高。\n\n此操作不可撤销！",
+  "software.title": "软件管理",
+  "software.uninstall": "卸载选中",
+  "software.loading": "正在加载已安装软件列表...",
+  "software.empty": "未找到已安装软件",
+  "software.admin_warn": "部分软件需要管理员权限才能卸载，非管理员运行可能失败",
+  "software.select_none": "请至少选择一个要卸载的软件",
+  "software.confirm": "确定要卸载以下软件吗？",
+  "software.success": "已卸载",
+  "software.failed": "失败",
+  "software.uninstalling": "正在卸载",
+  "software.uninstall_log": "卸载日志"
 }

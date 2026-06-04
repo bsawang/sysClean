@@ -99,5 +99,16 @@
   "search.rebuilding": "Rebuilding...",
   "search.stopped": "Service stopped",
   "search.ready": "Ready",
-  "search.confirm": "Are you sure you want to rebuild the Search Index?\n\nWindows Search will be unavailable during rebuilding. The process may take several hours with high CPU usage.\n\nThis operation cannot be undone!"
+  "search.confirm": "Are you sure you want to rebuild the Search Index?\n\nWindows Search will be unavailable during rebuilding. The process may take several hours with high CPU usage.\n\nThis operation cannot be undone!",
+  "software.title": "Software Manager",
+  "software.uninstall": "Uninstall Selected",
+  "software.loading": "Loading installed programs...",
+  "software.empty": "No installed programs found",
+  "software.admin_warn": "Some programs require admin privileges to uninstall. Running without admin may cause failures.",
+  "software.select_none": "Please select at least one program to uninstall",
+  "software.confirm": "Are you sure you want to uninstall the following programs?",
+  "software.success": "Uninstalled",
+  "software.failed": "Failed",
+  "software.uninstalling": "Uninstalling",
+  "software.uninstall_log": "Uninstall Log"
 }

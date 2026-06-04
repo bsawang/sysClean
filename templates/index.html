@@ -227,6 +227,16 @@
         </button>
         <div id="search-status" style="font-size:0.72rem;color:#8b949e;margin-top:4px;text-align:center;"></div>
       </div>
+      <!-- Software Management -->
+      <div id="software-section" style="margin-top:10px">
+        <button class="btn btn-ghost btn-sm btn-operation" onclick="showSoftwareView()" style="width:100%;font-size:0.82rem;" id="btn-software">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+          </svg>
+          <span data-i18n="software.title">Software Manager</span>
+          <span id="software-count" style="margin-left:auto;font-size:0.78rem;color:#8b949e">-</span>
+        </button>
+      </div>
       <!-- Sandbox toggle -->
       <hr style="border:none;border-top:1px solid #21262d;margin:14px 0;">
       <button class="btn btn-ghost btn-sm" id="btn-sandbox" onclick="toggleSandbox()" style="width:100%;font-size:0.82rem;">
@@ -484,6 +494,53 @@
         </button>
       </div>
 
+      <!-- ---------------------------------------------------------- -->
+      <!-- View 7: Software Manager                                   -->
+      <!-- ---------------------------------------------------------- -->
+      <div id="view-software" class="hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h2 style="font-size:1.1rem;font-weight:600;color:#c9d1d9">
+            <span data-i18n="software.title">Software Manager</span>
+            <span id="software-total" style="color:#8b949e;font-size:0.9rem;font-weight:400;margin-left:8px">0 programs</span>
+          </h2>
+          <button class="btn btn-ghost btn-sm" onclick="showView('empty')" data-i18n="btn.back_home">← Back</button>
+        </div>
+
+        <div id="software-admin-warn" style="display:none;background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.2);border-radius:6px;padding:8px 12px;font-size:0.82rem;color:#d29922;margin-bottom:12px">
+          🔒 <span data-i18n="software.admin_warn">Some programs require admin privileges to uninstall</span>
+        </div>
+
+        <div style="margin-bottom:12px">
+          <input type="text" id="software-filter" oninput="filterSoftware()" placeholder="Filter..." style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;color:#c9d1d9;font-size:0.88rem">
+        </div>
+
+        <div class="action-buttons" style="border-top:none;padding-top:0;margin-bottom:12px">
+          <button class="btn btn-ghost btn-sm" onclick="selectAllSoftware(true)" data-i18n="btn.select_all">Select All</button>
+          <button class="btn btn-ghost btn-sm" onclick="selectAllSoftware(false)" data-i18n="btn.deselect_all">Deselect All</button>
+          <button class="btn btn-danger btn-sm btn-operation" onclick="startUninstall()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span data-i18n="software.uninstall">Uninstall Selected</span>
+          </button>
+        </div>
+
+        <div id="software-loading" style="text-align:center;padding:32px;color:#8b949e" data-i18n="software.loading">Loading...</div>
+
+        <div id="software-list" style="max-height:500px;overflow-y:auto;border:1px solid #21262d;border-radius:8px;"></div>
+
+        <div id="software-progress" class="hidden" style="margin-top:16px">
+          <div class="progress-section">
+            <p><span data-i18n="software.uninstalling">Uninstalling</span>: <span id="uninstall-current">-</span></p>
+            <div class="progress-bar">
+              <div id="uninstall-progress-fill" class="progress-fill red" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="live-feed">
+            <div class="feed-header" data-i18n="software.uninstall_log">Uninstall Log</div>
+            <div id="uninstall-feed" style="max-height:200px;overflow-y:auto;"></div>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
@@ -515,7 +572,7 @@ function switchLang(lang) {
 // View switching
 // ====================================================================
 function showView(viewId) {
-  var views = ['empty', 'scan', 'results', 'confirm', 'clean', 'complete'];
+  var views = ['empty', 'scan', 'results', 'confirm', 'clean', 'complete', 'software'];
   views.forEach(function(id) {
     var el = document.getElementById('view-' + id);
     if (el) el.classList.add('hidden');
@@ -1397,6 +1454,127 @@ document.addEventListener('DOMContentLoaded', function() {
     showView('empty');
   }
 });
+
+// ====================================================================
+// Software Manager
+// ====================================================================
+var allPrograms = [];
+
+function showSoftwareView() {
+    showView('software');
+    document.getElementById('software-loading').style.display = '';
+    document.getElementById('software-list').innerHTML = '';
+    document.getElementById('software-progress').classList.add('hidden');
+
+    fetch('/api/uninstall/list')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            allPrograms = d.programs || [];
+            document.getElementById('software-loading').style.display = 'none';
+            document.getElementById('software-total').textContent = allPrograms.length + ' ' + _t('results.items');
+            document.getElementById('software-count').textContent = allPrograms.length;
+
+            var adminWarn = document.getElementById('software-admin-warn');
+            adminWarn.style.display = d.admin ? 'none' : '';
+
+            renderSoftwareList(allPrograms);
+        });
+}
+
+function renderSoftwareList(programs) {
+    var html = '';
+    programs.forEach(function(p) {
+        html += '<div class="result-item" style="border-bottom:1px solid #21262d">'
+            + '<input type="checkbox" class="software-cb" data-name="' + escapeHtml(p.name) + '" checked>'
+            + '<div style="flex:1;min-width:0;margin-left:8px">'
+            + '<div style="font-size:0.88rem;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(p.name) + '</div>'
+            + '<div style="font-size:0.75rem;color:#8b949e">'
+            + (p.publisher ? escapeHtml(p.publisher) + ' · ' : '')
+            + (p.version ? escapeHtml(p.version) + ' · ' : '')
+            + (p.install_date || '')
+            + '</div></div>'
+            + '<span style="font-size:0.82rem;color:#8b949e;white-space:nowrap;padding-left:8px">' + (p.size_fmt || '') + '</span>'
+            + '</div>';
+    });
+    document.getElementById('software-list').innerHTML = html || '<div style="padding:16px;text-align:center;color:#8b949e">' + _t('software.empty') + '</div>';
+}
+
+function filterSoftware() {
+    var q = document.getElementById('software-filter').value.toLowerCase();
+    var filtered = allPrograms.filter(function(p) { return p.name.toLowerCase().indexOf(q) !== -1; });
+    renderSoftwareList(filtered);
+}
+
+function selectAllSoftware(select) {
+    document.querySelectorAll('.software-cb').forEach(function(cb) { cb.checked = select; });
+}
+
+function startUninstall() {
+    var selected = [];
+    document.querySelectorAll('.software-cb:checked').forEach(function(cb) {
+        selected.push(cb.getAttribute('data-name'));
+    });
+    if (selected.length === 0) {
+        alert(_t('software.select_none'));
+        return;
+    }
+    if (!confirm(_t('software.confirm') + ' (' + selected.length + ' ' + _t('results.items') + ')')) return;
+
+    if (isBusy) { alert(BUSY_MSG); return; }
+    startBusyPolling();
+
+    document.getElementById('software-progress').classList.remove('hidden');
+    document.getElementById('uninstall-feed').innerHTML = '';
+    document.getElementById('uninstall-progress-fill').style.width = '0%';
+
+    fetch('/api/uninstall/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ names: selected })
+    })
+    .then(function(resp) { return resp.body.getReader(); })
+    .then(function(reader) {
+        var decoder = new TextDecoder();
+        var buffer = '';
+        function read() {
+            return reader.read().then(function(result) {
+                if (result.done) return;
+                buffer += decoder.decode(result.value, { stream: true });
+                var lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+                lines.forEach(function(line) {
+                    if (line.indexOf('data: ') !== 0) return;
+                    try {
+                        var ev = JSON.parse(line.substring(6));
+                        if (ev.type === 'uninstall_progress') {
+                            var pct = Math.round((ev.completed / ev.total) * 100);
+                            document.getElementById('uninstall-progress-fill').style.width = pct + '%';
+                            document.getElementById('uninstall-current').textContent = ev.current;
+                        }
+                        if (ev.type === 'uninstall_result') {
+                            var feed = document.getElementById('uninstall-feed');
+                            var row = document.createElement('div');
+                            row.className = 'feed-row';
+                            var icon = ev.success ? '✅' : '❌';
+                            row.innerHTML = '<span>' + icon + '</span>'
+                                + '<span class="mono" style="flex:1;margin-left:6px">' + escapeHtml(ev.name) + '</span>'
+                                + '<span style="color:' + (ev.success ? '#3fb950' : '#f85149') + ';font-size:0.8rem">'
+                                + (ev.success ? _t('software.success') : _t('software.failed') + (ev.reason ? ': ' + escapeHtml(ev.reason) : ''))
+                                + '</span>';
+                            feed.appendChild(row);
+                            feed.scrollTop = feed.scrollHeight;
+                        }
+                        if (ev.type === 'uninstall_complete') {
+                            document.getElementById('uninstall-progress-fill').style.width = '100%';
+                        }
+                    } catch(e) {}
+                });
+                return read();
+            });
+        }
+        return read();
+    });
+}
 </script>
 
 </body>

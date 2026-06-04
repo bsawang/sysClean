@@ -700,3 +700,16 @@ a:hover { text-decoration: underline; }
 
 /* ----- Selection colour ----- */
 ::selection { background: rgba(88, 166, 255, 0.3); }
+
+/* Admin hint badge */
+.admin-hint { font-size: 0.72rem; color: #d29922; margin-left: 4px; vertical-align: middle; }
+
+/* Software manager list */
+#software-list .result-item { display: flex; align-items: center; padding: 8px 12px; }
+#software-list .result-item:hover { background: #161b22; }
+
+/* Completion hints */
+.hint-value { font-weight: 600; color: #d29922; }
+
+/* Recycle bin / Search index section */
+#recycle-section, #search-section, #software-section { padding: 0 2px; }
