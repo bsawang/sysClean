@@ -943,6 +943,7 @@ async function executeClean() {
     }
 
     if (cleanData) {
+      clearState();
       setTimeout(function() { showComplete(cleanData); }, 500);
     }
   } catch (e) {
