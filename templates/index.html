@@ -400,7 +400,8 @@ function _t(key) { return _T[key] || key; }
 function switchLang(lang) {
   var url = new URL(window.location);
   url.searchParams.set('lang', lang);
-  window.location.href = url.toString();
+  window.history.replaceState({}, '', url.toString());
+  loadTranslations(lang);
 }
 
 // ====================================================================
@@ -584,7 +585,6 @@ function startPolling() {
         var totalSize = 0;
         items.forEach(function(item) { totalSize += (item.size || 0); });
 
-        // Update stat cards
         document.getElementById('scan-dirs-count').textContent = String(items.length);
         document.getElementById('scan-found-size').textContent = formatSize(totalSize);
         if (items.length > 0) {
@@ -592,26 +592,29 @@ function startPolling() {
           document.getElementById('scan-current-cat').textContent = _t('cat.' + lastCat) || lastCat;
         }
 
-        // Progress bar: animate as items are discovered (capped at 95%)
-        var pct = Math.min(95, items.length * 3);
-        document.getElementById('scan-progress-fill').style.width = pct + '%';
+        if (data.scanning) {
+          var cur = parseFloat(document.getElementById('scan-progress-fill').style.width) || 0;
+          var nxt = Math.min(90, cur + 3 + Math.random() * 5);
+          document.getElementById('scan-progress-fill').style.width = nxt + '%';
+          document.getElementById('scan-pct').textContent = Math.round(nxt) + '%';
+        }
 
-        // Add new items to the live feed
-        items.forEach(function(item) {
-          if (!knownFeedIds[item.id]) {
-            knownFeedIds[item.id] = true;
-            var feed = document.getElementById('scan-feed');
-            var row = document.createElement('div');
-            row.className = 'feed-row';
-            row.innerHTML = '<span class="icon info">'
-              + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-              + '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>'
-              + '<span class="mono" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(item.path) + '</span>'
-              + '<span style="color:#8b949e;font-size:0.8rem">' + (item.size_fmt || formatSize(item.size)) + '</span>';
-            feed.appendChild(row);
-            feed.scrollTop = feed.scrollHeight;
-          }
-        });
+        if (!data.scanning && items.length > 0) {
+          items.forEach(function(item) {
+            if (!knownFeedIds[item.id]) {
+              knownFeedIds[item.id] = true;
+              var feed = document.getElementById('scan-feed');
+              var row = document.createElement('div');
+              row.className = 'feed-row';
+              row.innerHTML = '<span class="icon info">'
+                + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+                + '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>'
+                + '<span class="mono" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(item.path) + '</span>'
+                + '<span style="color:#8b949e;font-size:0.8rem">' + (item.size_fmt || formatSize(item.size)) + '</span>';
+              feed.appendChild(row);
+              feed.scrollTop = feed.scrollHeight;
+            }
+          });
 
         // Check if scan is complete
         if (!data.scanning) {
