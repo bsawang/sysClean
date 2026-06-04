@@ -220,27 +220,7 @@
         </div>
       </div>
 
-      <!-- Search Index card -->
-      <div class="op-card" id="search-section">
-        <div class="op-card-header" style="background:rgba(88,166,255,0.08)">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <span class="op-card-label" data-i18n="search.title">Search Index</span>
-          <span id="search-size" style="font-size:0.92rem;font-weight:600;color:#58a6ff">-</span>
-        </div>
-        <div id="search-path" style="font-size:0.88rem;color:#8b949e;margin-top:6px;word-break:break-all;line-height:1.4;font-family:inherit"></div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
-          <label class="sandbox-toggle" title="Toggle WSearch service">
-            <input type="checkbox" id="search-service-toggle" onchange="toggleSearchService(this.checked)">
-            <span class="toggle-track"><span class="toggle-thumb"></span></span>
-            <span class="toggle-label" id="search-toggle-label" data-i18n="search.stop">停止</span>
-          </label>
-          <button class="btn btn-ghost btn-sm btn-operation" onclick="rebuildSearchIndex()" style="font-size:0.82rem;padding:4px 14px" id="btn-rebuild-index">
-            <span data-i18n="search.rebuild">重建</span>
-          </button>
-        </div>
-      </div>
+      <!-- Search Index card (hidden, planned for future release) -->
 
       <!-- Software card -->
       <div class="op-card" id="software-section">
@@ -1486,7 +1466,6 @@ document.addEventListener('DOMContentLoaded', function() {
   checkBusy();
   refreshDiskCard();
   refreshRecycleStatus();
-  refreshSearchStatus();
 
   // Load translations first, then restore state (i18n must be ready)
   loadTranslations(urlLang).then(function() {
