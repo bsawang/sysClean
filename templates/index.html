@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="app.title">SysClean</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='htmx.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='sse.js') }}"></script>
+  <style>
+    /* --- Additional styles not in style.css --- */
+    .result-expand { display: inline-flex; align-items: center; transition: transform 0.2s ease; }
+    .result-header .chevron-icon { transition: transform 0.2s ease; }
+    .result-items { border-top: 1px solid var(--border, #21262d); }
+    .group-checkbox, .item-checkbox { cursor: pointer; accent-color: #58a6ff; }
+    .cat-item input[type="checkbox"] { accent-color: #58a6ff; width: 15px; height: 15px; }
+    .cat-item input[type="checkbox"]:checked + .cat-icon { color: #58a6ff; }
+    .disk-info-compact { font-size: 0.78rem; color: #8b949e; text-align: center; margin-top: 4px; }
+    #scan-feed, #clean-feed { max-height: 260px; overflow-y: auto; }
+    .complete-icon { color: #3fb950; margin-bottom: 8px; }
+    .freed-number { font-size: 2.4rem; font-weight: 700; color: #3fb950; margin: 8px 0; }
+    .compare-label { text-align: center; margin-bottom: 6px; color: #8b949e; font-size: 0.82rem; }
+    .compare-bar-wrapper { flex: 1; max-width: 220px; }
+    .select-lang { background: transparent; color: #c9d1d9; border: 1px solid #30363d; border-radius: 6px; padding: 4px 8px; font-size: 0.82rem; cursor: pointer; }
+    .select-lang option { background: #161b22; color: #c9d1d9; }
+    .disk-card-loading { color: #8b949e; font-size: 0.85rem; padding: 16px; text-align: center; }
+    .header-right { display: flex; align-items: center; gap: 16px; margin-left: auto; }
+    .header h1 { font-size: 1.15rem; font-weight: 600; color: #c9d1d9; }
+    .action-buttons { display: flex; gap: 8px; border-top: 1px solid #21262d; padding-top: 16px; margin-top: 16px; justify-content: flex-end; }
+    .result-header-checkbox { margin-right: 4px; }
+    .summary-cat-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.88rem; border-bottom: 1px solid #21262d; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+    .disk-compare-container { display: flex; gap: 24px; justify-content: center; margin-top: 16px; }
+    .stat-card-compact { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 12px 16px; text-align: center; flex: 1; }
+    .stat-card-compact .stat-value { font-size: 1.15rem; font-weight: 700; color: #c9d1d9; }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============================================================ -->
+  <!-- Header                                                        -->
+  <!-- ============================================================ -->
+  <header class="header">
+    <div style="display:flex;align-items:center;gap:8px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </svg>
+      <h1 data-i18n="app.title">SysClean</h1>
+    </div>
+    <div class="header-right">
+      <span id="disk-info" style="font-size:0.82rem;color:#8b949e">
+        <span data-i18n="app.os">Windows 10</span>
+      </span>
+      <select class="select-lang" onchange="switchLang(this.value)">
+        <option value="zh" {% if lang == 'zh' %}selected{% endif %}>中文</option>
+        <option value="en" {% if lang == 'en' %}selected{% endif %}>English</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- Main Layout                                                  -->
+  <!-- ============================================================ -->
+  <div class="main">
+
+    <!-- ============================================================ -->
+    <!-- Sidebar                                                      -->
+    <!-- ============================================================ -->
+    <aside class="sidebar">
+
+      <!-- Disk status card (loaded via HTMX) -->
+      <div id="disk-card"
+           hx-get="/api/disk"
+           hx-trigger="load"
+           hx-swap="innerHTML"
+           hx-vals='js:{lang: (new URLSearchParams(window.location.search)).get("lang")||"zh"}'>
+        <div class="disk-card-loading" data-i18n="disk.loading">Loading...</div>
+      </div>
+
+      <!-- Category title -->
+      <div class="cat-title" data-i18n="cat.title">Scan Categories</div>
+
+      <!-- Category: temp -->
+      <label class="cat-item">
+        <input type="checkbox" value="temp" checked>
+        <svg class="cat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          <line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/>
+        </svg>
+        <span class="cat-label" data-i18n="cat.temp">Temp Files</span>
+        <span class="cat-badge" data-i18n="cat.temp.badge">Windows Temp</span>
+      </label>
+
+      <!-- Category: cache -->
+      <label class="cat-item">
+        <input type="checkbox" value="cache" checked>
+        <svg class="cat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+        </svg>
+        <span class="cat-label" data-i18n="cat.cache">System Cache</span>
+        <span class="cat-badge" data-i18n="cat.cache.badge">NVIDIA</span>
+      </label>
+
+      <!-- Category: installer -->
+      <label class="cat-item">
+        <input type="checkbox" value="installer" checked>
+        <svg class="cat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+        </svg>
+        <span class="cat-label" data-i18n="cat.installer">Installer Residuals</span>
+        <span class="cat-badge" data-i18n="cat.installer.badge">Installer</span>
+      </label>
+
+      <!-- Category: browser -->
+      <label class="cat-item">
+        <input type="checkbox" value="browser" checked>
+        <svg class="cat-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span class="cat-label" data-i18n="cat.browser">Browser Cache</span>
+        <span class="cat-badge" data-i18n="cat.browser.badge">Chrome</span>
+      </label>
+
+      <!-- Start Scan button -->
+      <button class="btn btn-primary btn-block" onclick="startScan()" style="margin-top:12px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span data-i18n="btn.scan">Start Scan</span>
+      </button>
+
+      <!-- Risk legend -->
+      <div class="legend">
+        <div class="legend-title" style="width:100%;font-size:0.72rem;font-weight:600;color:#8b949e;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px" data-i18n="risk.legend.title">Risk Levels</div>
+        <div class="legend-item"><span class="legend-dot safe"></span><span data-i18n="risk.legend.safe">Safe to delete</span></div>
+        <div class="legend-item"><span class="legend-dot caution"></span><span data-i18n="risk.legend.caution">Review before cleaning</span></div>
+        <div class="legend-item"><span class="legend-dot danger"></span><span data-i18n="risk.legend.danger">Proceed with care</span></div>
+      </div>
+
+    </aside>
+
+    <!-- ============================================================ -->
+    <!-- Content Area                                                 -->
+    <!-- ============================================================ -->
+    <main class="content">
+
+      <!-- ---------------------------------------------------------- -->
+      <!-- View 1: Empty state                                        -->
+      <!-- ---------------------------------------------------------- -->
+      <div id="view-empty" class="empty-state">
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.6;margin-bottom:12px">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <h3 data-i18n="view.empty.title">Select a scan category on the left</h3>
+        <p data-i18n="view.empty.subtitle">Then click "Start Scan"</p>
+      </div>
+
+      <!-- ---------------------------------------------------------- -->
+      <!-- View 2: Scan progress                                      -->
+      <!-- ---------------------------------------------------------- -->
+      <div id="view-scan" class="hidden">
+
+        <!-- Steps indicator -->
+        <div class="steps">
+          <div id="step-1" class="step-circle step-pending">1</div>
+          <div id="step-line-1" class="step-line"></div>
+          <div id="step-2" class="step-circle step-pending">2</div>
+          <div id="step-line-2" class="step-line"></div>
+          <div id="step-3" class="step-circle step-pending">3</div>
+          <div id="step-line-3" class="step-line"></div>
+          <div id="step-4" class="step-circle step-pending">4</div>
+        </div>
+
+        <div class="progress-section" style="max-width:100%;margin:24px 0">
+          <p data-i18n="scan.scanning">Scanning...</p>
+          <div class="progress-bar">
+            <div id="scan-progress-fill" class="progress-fill blue" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Stat cards -->
+        <div class="stat-grid stat-grid-3" style="margin-bottom:16px">
+          <div class="stat-card">
+            <div class="stat-label" data-i18n="scan.dirs_scanned">Scanned</div>
+            <div class="stat-value" id="scan-dirs-count" style="font-size:1.3rem">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label" data-i18n="scan.found">Found</div>
+            <div class="stat-value" id="scan-found-size" style="font-size:1.3rem;color:#d29922">0 B</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label" data-i18n="scan.current">Current</div>
+            <div class="stat-value" id="scan-current-cat" style="font-size:1rem;color:#58a6ff">-</div>
+          </div>
+        </div>
+
+        <!-- Live feed -->
+        <div class="live-feed">
+          <div class="feed-header" data-i18n="scan.live_feed">Live Feed</div>
+          <div id="scan-feed"></div>
+        </div>
+      </div>
+
+      <!-- ---------------------------------------------------------- -->
+      <!-- View 3: Scan results                                       -->
+      <!-- ---------------------------------------------------------- -->
+      <div id="view-results" class="hidden">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <h2 style="font-size:1.1rem;font-weight:600;color:#c9d1d9">
+            <span data-i18n="results.title">Scan Results</span>
+            <span id="results-total" style="color:#8b949e;font-size:0.9rem;font-weight:400;margin-left:8px">0 items</span>
+          </h2>
+          <span id="results-selected" style="font-size:0.88rem;color:#58a6ff">0 Selected</span>
+        </div>
+
+        <!-- Results container -->
+        <div id="results-container"></div>
+
+        <!-- Action buttons -->
+        <div class="action-buttons">
+          <button class="btn btn-ghost btn-sm" onclick="selectAllItems(true)" data-i18n="btn.select_all">Select All</button>
+          <button class="btn btn-ghost btn-sm" onclick="selectAllItems(false)" data-i18n="btn.deselect_all">Deselect All</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmClean()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            <span data-i18n="btn.clean_selected">Clean Selected</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ---------------------------------------------------------- -->
+      <!-- View 4: Confirm dialog (modal)                             -->
+      <!-- ---------------------------------------------------------- -->
+      <div id="view-confirm" class="hidden modal-overlay">
+        <div class="modal-box">
+          <h2 data-i18n="confirm.title">Confirm Cleanup</h2>
+          <p data-i18n="confirm.subtitle">The following files will be permanently deleted</p>
+
+          <div id="confirm-count" style="font-size:0.9rem;color:#c9d1d9;margin-bottom:12px"></div>
+          <div id="confirm-summary" style="margin-bottom:12px"></div>
+
+          <div style="background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.2);border-radius:6px;padding:10px 12px;font-size:0.82rem;color:#f85149;margin-bottom:4px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span data-i18n="confirm.warning">This operation will permanently delete files. They will not go to the Recycle Bin.</span>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn btn-ghost" onclick="showView('results')" data-i18n="btn.cancel">Cancel</button>
+            <button class="btn btn-danger" onclick="executeClean()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              <span data-i18n="btn.confirm">Confirm Cleanup</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---------------------------------------------------------- -->
+      <!-- View 5: Clean progress                                     -->
+      <!-- ---------------------------------------------------------- -->
+      <div id="view-clean" class="hidden">
+
+        <!-- Steps indicator -->
+        <div class="steps">
+          <div id="clean-step-1" class="step-circle step-done" style="background:#238636;color:#fff">&#10003;</div>
+          <div id="clean-step-line-1" class="step-line" style="background:#238636"></div>
+          <div id="clean-step-2" class="step-circle step-done" style="background:#238636;color:#fff">&#10003;</div>
+          <div id="clean-step-line-2" class="step-line" style="background:#238636"></div>
+          <div id="clean-step-3" class="step-circle step-done" style="background:#238636;color:#fff">&#10003;</div>
+          <div id="clean-step-line-3" class="step-line" style="background:#238636"></div>
+          <div id="clean-step-4" class="step-circle step-current">4</div>
+        </div>
+
+        <div class="progress-section" style="max-width:100%;margin:24px 0">
+          <p><span data-i18n="clean.progress_title">Cleanup Progress</span>: <span id="clean-progress-pct">0%</span></p>
+          <div class="progress-bar">
+            <div id="clean-progress-fill" class="progress-fill red" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Stat cards -->
+        <div class="stat-grid stat-grid-2" style="margin-bottom:16px">
+          <div class="stat-card">
+            <div class="stat-label" data-i18n="clean.freed">Freed</div>
+            <div class="stat-value" id="clean-freed" style="font-size:1.6rem">0 B</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label" data-i18n="clean.completed">Completed</div>
+            <div class="stat-value" id="clean-completed" style="font-size:1.6rem">0 / 0</div>
+          </div>
+        </div>
+
+        <!-- Live feed -->
+        <div class="live-feed">
+          <div class="feed-header" data-i18n="scan.live_feed">Live Feed</div>
+          <div id="clean-feed"></div>
+        </div>
+      </div>
+
+      <!-- ---------------------------------------------------------- -->
+      <!-- View 6: Complete report                                    -->
+      <!-- ---------------------------------------------------------- -->
+      <div id="view-complete" class="hidden" style="text-align:center;padding-top:20px">
+        <!-- Success icon -->
+        <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <h2 style="font-size:1.4rem;font-weight:700;color:#c9d1d9;margin-bottom:4px" data-i18n="complete.title">Cleanup Complete!</h2>
+        <p style="color:#8b949e;margin-bottom:16px" data-i18n="complete.subtitle">All selected items have been successfully cleaned</p>
+
+        <!-- Freed space big number -->
+        <div class="freed-number" id="complete-freed">0 B</div>
+        <p style="color:#8b949e;font-size:0.88rem;margin-bottom:24px" data-i18n="complete.freed">Total space freed</p>
+
+        <!-- Disk comparison chart -->
+        <div id="disk-compare" class="report-section" style="max-width:500px;margin:0 auto 24px">
+          <div style="display:flex;gap:24px;justify-content:center">
+            <div class="compare-bar-wrapper">
+              <div class="compare-label" data-i18n="complete.before">Before</div>
+              <div class="disk-bar" style="height:16px;border-radius:8px">
+                <div class="disk-fill" id="compare-before-fill" style="width:0%;height:16px;border-radius:8px;transition:width 0.6s ease"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:#8b949e;margin-top:4px">
+                <span id="compare-before-used">0 GB</span>
+                <span id="compare-before-free">0 GB <span data-i18n="disk.free">Free</span></span>
+              </div>
+            </div>
+            <div class="compare-bar-wrapper">
+              <div class="compare-label" data-i18n="complete.after">After</div>
+              <div class="disk-bar" style="height:16px;border-radius:8px">
+                <div class="disk-fill" id="compare-after-fill" style="width:0%;height:16px;border-radius:8px;transition:width 0.6s ease 0.3s"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:#8b949e;margin-top:4px">
+                <span id="compare-after-used">0 GB</span>
+                <span id="compare-after-free">0 GB <span data-i18n="disk.free">Free</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="stat-grid stat-grid-3" style="max-width:500px;margin:0 auto 24px">
+          <div class="stat-card-compact">
+            <div class="stat-label" data-i18n="complete.cleaned">Cleaned</div>
+            <div class="stat-value" id="complete-cleaned-count" style="color:#3fb950">0</div>
+          </div>
+          <div class="stat-card-compact">
+            <div class="stat-label" data-i18n="clean.failed">Failed</div>
+            <div class="stat-value" id="complete-failed-count" style="color:#f85149">0</div>
+          </div>
+          <div class="stat-card-compact">
+            <div class="stat-label" data-i18n="complete.time">Time Elapsed</div>
+            <div class="stat-value" id="complete-time" style="color:#58a6ff">0.0s</div>
+          </div>
+        </div>
+
+        <!-- Back to Home button -->
+        <button class="btn btn-ghost" onclick="goHome()">
+          <span data-i18n="btn.back_home">&larr; Back to Home</span>
+        </button>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ================================================================ -->
+<!-- JavaScript                                                       -->
+<!-- ================================================================ -->
+<script>
+// ====================================================================
+// i18n
+// ====================================================================
+let _T = {};
+async function loadTranslations(lang) {
+  const resp = await fetch('/api/translations?lang=' + lang);
+  _T = await resp.json();
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    el.textContent = _t(el.getAttribute('data-i18n'));
+  });
+}
+function _t(key) { return _T[key] || key; }
+function switchLang(lang) {
+  var url = new URL(window.location);
+  url.searchParams.set('lang', lang);
+  window.location.href = url.toString();
+}
+
+// ====================================================================
+// View switching
+// ====================================================================
+function showView(viewId) {
+  var views = ['empty', 'scan', 'results', 'confirm', 'clean', 'complete'];
+  views.forEach(function(id) {
+    var el = document.getElementById('view-' + id);
+    if (el) el.classList.add('hidden');
+  });
+  var target = document.getElementById('view-' + viewId);
+  if (target) target.classList.remove('hidden');
+}
+
+// ====================================================================
+// Formatting helpers
+// ====================================================================
+function formatSize(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  var value = Math.abs(bytes);
+  var idx = 0;
+  while (value >= 1024 && idx < units.length - 1) { value /= 1024; idx++; }
+  return value.toFixed(2) + ' ' + units[idx];
+}
+
+function riskTag(risk) {
+  var cls = {safe:'risk-safe', caution:'risk-caution', danger:'risk-danger'}[risk] || 'risk-safe';
+  var key = {safe:'risk.safe', caution:'risk.caution', danger:'risk.danger'}[risk] || 'risk.safe';
+  return '<span class="risk-tag ' + cls + '">' + _t(key) + '</span>';
+}
+
+// ====================================================================
+// HTMX: intercept JSON from /api/disk and render as HTML
+// ====================================================================
+document.body.addEventListener('htmx:beforeSwap', function(evt) {
+  if (evt.detail.target && evt.detail.target.id === 'disk-card') {
+    var ct = evt.detail.xhr.getResponseHeader('Content-Type') || '';
+    if (ct.indexOf('json') !== -1) {
+      try {
+        var data = JSON.parse(evt.detail.serverResponse);
+        evt.detail.serverResponse = renderDiskCardHtml(data);
+      } catch (e) {}
+    }
+  }
+});
+
+// Re-apply translations after HTMX swaps content
+document.body.addEventListener('htmx:afterSwap', function(evt) {
+  if (_T && Object.keys(_T).length > 0) {
+    document.querySelectorAll('[data-i18n]').forEach(function(el) {
+      el.textContent = _t(el.getAttribute('data-i18n'));
+    });
+  }
+});
+
+function renderDiskCardHtml(data) {
+  var totalGB = (data.total / 1073741824).toFixed(1);
+  var usedGB = (data.used / 1073741824).toFixed(1);
+  var freeGB = (data.free / 1073741824).toFixed(1);
+  var pct = data.percent;
+  var cls = 'safe';
+  if (pct >= 90) cls = 'danger';
+  else if (pct >= 75) cls = 'warning';
+  return '<div class="disk-card">'
+    + '<div class="disk-header">'
+    + '<span class="disk-label" data-i18n="disk.title">' + _t('disk.title') + '</span>'
+    + '<span class="disk-percent ' + cls + '">' + pct + '%</span>'
+    + '</div>'
+    + '<div class="disk-bar"><div class="disk-fill ' + cls + '" style="width:' + pct + '%"></div></div>'
+    + '<div class="disk-info">'
+    + '<span>' + _t('disk.used') + ': ' + usedGB + ' GB / ' + totalGB + ' GB</span>'
+    + '<span>' + _t('disk.free') + ': ' + freeGB + ' GB</span>'
+    + '</div></div>';
+}
+
+// ====================================================================
+// Disk info (cached for before/after comparison)
+// ====================================================================
+var diskBefore = null;
+
+// ====================================================================
+// Scan state
+// ====================================================================
+var scanItems = [];
+var knownFeedIds = {};
+var scanPollInterval = null;
+
+// ====================================================================
+// Clean state
+// ====================================================================
+var selectedForClean = [];
+
+// ====================================================================
+// Steps indicator
+// ====================================================================
+function updateSteps(activeStep) {
+  for (var i = 1; i <= 4; i++) {
+    var circle = document.getElementById('step-' + i);
+    var line = document.getElementById('step-line-' + i);
+
+    if (i < activeStep) {
+      if (circle) { circle.className = 'step-circle step-done'; circle.innerHTML = '&#10003;'; }
+    } else if (i === activeStep) {
+      if (circle) { circle.className = 'step-circle step-current'; circle.textContent = String(i); }
+    } else {
+      if (circle) { circle.className = 'step-circle step-pending'; circle.textContent = String(i); }
+    }
+    // The line color is handled automatically by CSS: .step-done + .step-line
+    if (line) line.className = 'step-line';
+  }
+}
+
+// ====================================================================
+// Scan flow: startScan
+// ====================================================================
+function startScan() {
+  var checked = document.querySelectorAll('.cat-item input:checked');
+  if (checked.length === 0) {
+    alert(_t('scan.select_category'));
+    return;
+  }
+  var categories = [];
+  checked.forEach(function(cb) { categories.push(cb.value); });
+
+  // Switch to scan view
+  showView('scan');
+
+  // Reset state
+  scanItems = [];
+  knownFeedIds = {};
+  if (scanPollInterval) { clearInterval(scanPollInterval); scanPollInterval = null; }
+
+  // Reset UI
+  document.getElementById('scan-progress-fill').style.width = '0%';
+  document.getElementById('scan-dirs-count').textContent = '0';
+  document.getElementById('scan-found-size').textContent = '0 B';
+  document.getElementById('scan-current-cat').textContent = '-';
+  document.getElementById('scan-feed').innerHTML = '';
+
+  // Update steps: step 1 is done (categories selected), step 2 is current
+  updateSteps(2);
+
+  // Start the scan via API
+  fetch('/api/scan/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ categories: categories })
+  }).then(function(resp) {
+    if (!resp.ok) {
+      if (resp.status === 409) {
+        // Scan already in progress, start polling anyway
+        startPolling();
+        return;
+      }
+      alert(_t('scan.failed'));
+      return;
+    }
+    startPolling();
+  }).catch(function() {
+    alert(_t('scan.failed'));
+  });
+}
+
+// ====================================================================
+// Scan flow: polling
+// ====================================================================
+function startPolling() {
+  if (scanPollInterval) clearInterval(scanPollInterval);
+  scanPollInterval = setInterval(function() {
+    var lang = new URLSearchParams(window.location.search).get('lang') || '{{ lang }}';
+    fetch('/api/scan/results?lang=' + lang)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        var items = data.items || [];
+        var totalSize = 0;
+        items.forEach(function(item) { totalSize += (item.size || 0); });
+
+        // Update stat cards
+        document.getElementById('scan-dirs-count').textContent = String(items.length);
+        document.getElementById('scan-found-size').textContent = formatSize(totalSize);
+        if (items.length > 0) {
+          var lastCat = items[items.length - 1].category;
+          document.getElementById('scan-current-cat').textContent = _t('cat.' + lastCat) || lastCat;
+        }
+
+        // Progress bar: animate as items are discovered (capped at 95%)
+        var pct = Math.min(95, items.length * 3);
+        document.getElementById('scan-progress-fill').style.width = pct + '%';
+
+        // Add new items to the live feed
+        items.forEach(function(item) {
+          if (!knownFeedIds[item.id]) {
+            knownFeedIds[item.id] = true;
+            var feed = document.getElementById('scan-feed');
+            var row = document.createElement('div');
+            row.className = 'feed-row';
+            row.innerHTML = '<span class="icon info">'
+              + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
+              + '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>'
+              + '<span class="mono" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(item.path) + '</span>'
+              + '<span style="color:#8b949e;font-size:0.8rem">' + (item.size_fmt || formatSize(item.size)) + '</span>';
+            feed.appendChild(row);
+            feed.scrollTop = feed.scrollHeight;
+          }
+        });
+
+        // Check if scan is complete
+        if (!data.scanning) {
+          clearInterval(scanPollInterval);
+          scanPollInterval = null;
+          document.getElementById('scan-progress-fill').style.width = '100%';
+
+          if (items.length > 0) {
+            scanItems = items;
+            setTimeout(function() {
+              updateSteps(3);
+              renderResults({ items: items, total: items.length });
+              showView('results');
+            }, 500);
+          } else {
+            setTimeout(function() {
+              showView('empty');
+            }, 500);
+          }
+        }
+      })
+      .catch(function() {
+        // Silently retry on next poll
+      });
+  }, 500);
+}
+
+// ====================================================================
+// Scan flow: renderResults
+// ====================================================================
+function renderResults(data) {
+  var container = document.getElementById('results-container');
+  var totalEl = document.getElementById('results-total');
+  totalEl.textContent = data.total + ' ' + _t('results.items');
+
+  // Group by category
+  var groups = {};
+  data.items.forEach(function(item) {
+    if (!groups[item.category]) groups[item.category] = [];
+    groups[item.category].push(item);
+  });
+
+  var html = '';
+  var catKeys = Object.keys(groups);
+  catKeys.forEach(function(cat) {
+    var items = groups[cat];
+    var catLabel = _t('cat.' + cat) || cat;
+    var totalGroupSize = 0;
+    items.forEach(function(item) { totalGroupSize += (item.size || 0); });
+
+    html += '<div class="result-group" data-category="' + cat + '">'
+      + '<div class="result-header" onclick="toggleGroup(this)">'
+      + '<div style="display:flex;align-items:center;gap:8px">'
+      + '<span class="result-expand"><svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>'
+      + '<input type="checkbox" class="group-checkbox" checked onchange="toggleGroupCheckbox(this)" onclick="event.stopPropagation()">'
+      + '<span>' + catLabel + '</span>'
+      + '<span class="text-muted" style="font-size:0.82rem">(' + items.length + ' ' + _t('results.items') + ', ' + formatSize(totalGroupSize) + ')</span>'
+      + '</div></div>'
+      + '<div class="result-items" style="display:block">';
+
+    items.forEach(function(item) {
+      html += '<div class="result-item">'
+        + '<input type="checkbox" class="item-checkbox" checked data-id="' + item.id + '" onchange="updateSelectedCount()">'
+        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8b949e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-left:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+        + '<span class="mono result-path" style="margin-left:6px">' + escapeHtml(item.path) + '</span>'
+        + riskTag(item.risk)
+        + '<span class="result-size" style="margin-left:auto;color:#8b949e;font-size:0.82rem;white-space:nowrap;padding-left:8px">' + (item.size_fmt || formatSize(item.size)) + '</span>'
+        + '</div>'
+        + '<div class="risk-desc">' + escapeHtml(item.risk_desc) + '</div>';
+    });
+
+    html += '</div></div>';
+  });
+
+  container.innerHTML = html;
+  updateSelectedCount();
+}
+
+// ====================================================================
+// Results: group toggling / selection
+// ====================================================================
+function toggleGroup(header) {
+  var group = header.closest('.result-group');
+  var items = group.querySelector('.result-items');
+  var chevron = header.querySelector('.chevron-icon');
+  if (items.style.display === 'none') {
+    items.style.display = 'block';
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
+  } else {
+    items.style.display = 'none';
+    if (chevron) chevron.style.transform = 'rotate(-90deg)';
+  }
+}
+
+function toggleGroupCheckbox(groupCb) {
+  var group = groupCb.closest('.result-group');
+  var itemCbs = group.querySelectorAll('.item-checkbox');
+  itemCbs.forEach(function(cb) { cb.checked = groupCb.checked; });
+  updateSelectedCount();
+}
+
+function updateSelectedCount() {
+  var total = document.querySelectorAll('.item-checkbox:checked').length;
+  document.getElementById('results-selected').textContent = total + ' ' + _t('results.selected');
+}
+
+function selectAllItems(select) {
+  document.querySelectorAll('.item-checkbox').forEach(function(cb) { cb.checked = select; });
+  document.querySelectorAll('.group-checkbox').forEach(function(cb) { cb.checked = select; });
+  updateSelectedCount();
+}
+
+// ====================================================================
+// Confirm clean
+// ====================================================================
+function confirmClean() {
+  var selected = getSelectedItems();
+  if (selected.length === 0) {
+    alert(_t('clean.select_none'));
+    return;
+  }
+  selectedForClean = selected;
+
+  // Group by category for summary
+  var groups = {};
+  selected.forEach(function(item) {
+    if (!groups[item.category]) groups[item.category] = [];
+    groups[item.category].push(item);
+  });
+  var catKeys = Object.keys(groups);
+  var catCount = catKeys.length;
+
+  document.getElementById('confirm-count').textContent =
+    _t('confirm.will_delete') + ' ' + catCount + ' ' + _t('confirm.classes') + ' ' + selected.length + ' ' + _t('results.items');
+
+  var listHtml = '';
+  catKeys.forEach(function(cat) {
+    var catItems = groups[cat];
+    var totalSize = 0;
+    catItems.forEach(function(item) { totalSize += (item.size || 0); });
+    listHtml += '<div class="summary-cat-row">'
+      + '<span>' + (_t('cat.' + cat) || cat) + '</span>'
+      + '<span>' + catItems.length + ' ' + _t('results.items') + ' - ' + formatSize(totalSize) + '</span>'
+      + '</div>';
+  });
+  document.getElementById('confirm-summary').innerHTML = listHtml;
+
+  showView('confirm');
+}
+
+function getSelectedItems() {
+  var items = [];
+  document.querySelectorAll('.result-group').forEach(function(group) {
+    var category = group.getAttribute('data-category');
+    var groupCb = group.querySelector('.group-checkbox');
+    var isGroupChecked = !groupCb || groupCb.checked;
+
+    group.querySelectorAll('.item-checkbox').forEach(function(cb) {
+      if (cb.checked && isGroupChecked) {
+        var itemEl = cb.closest('.result-item');
+        var sizeText = itemEl ? (itemEl.querySelector('.result-size') || {}).textContent || '0 B' : '0 B';
+        var size = parseSizeText(sizeText);
+        items.push({
+          id: cb.getAttribute('data-id'),
+          category: category,
+          size: size
+        });
+      }
+    });
+  });
+  return items;
+}
+
+function parseSizeText(text) {
+  var match = text.match(/([\d.]+)\s*(\w+)/);
+  if (!match) return 0;
+  var val = parseFloat(match[1]);
+  var unit = match[2].toUpperCase();
+  var units = {B: 1, KB: 1024, MB: 1048576, GB: 1073741824, TB: 1099511627776};
+  return val * (units[unit] || 1);
+}
+
+// ====================================================================
+// Execute clean (SSE streaming)
+// ====================================================================
+async function executeClean() {
+  if (selectedForClean.length === 0) return;
+
+  showView('clean');
+
+  // Reset progress
+  document.getElementById('clean-progress-fill').style.width = '0%';
+  document.getElementById('clean-freed').textContent = '0 B';
+  document.getElementById('clean-progress-pct').textContent = '0%';
+  document.getElementById('clean-completed').textContent = '0 / ' + selectedForClean.length;
+  document.getElementById('clean-feed').innerHTML = '';
+
+  var ids = selectedForClean.map(function(item) { return item.id; });
+
+  // Track start time for elapsed calculation
+  var startTime = Date.now();
+
+  try {
+    var resp = await fetch('/api/clean/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ids })
+    });
+
+    var reader = resp.body.getReader();
+    var decoder = new TextDecoder();
+    var buffer = '';
+    var cleanData = null;
+
+    while (true) {
+      var result = await reader.read();
+      if (result.done) break;
+
+      buffer += decoder.decode(result.value, { stream: true });
+      var lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        if (line.indexOf('data: ') === 0) {
+          try {
+            var event = JSON.parse(line.substring(6));
+
+            if (event.type === 'clean_progress') {
+              var pct = Math.round((event.completed / event.total) * 100);
+              document.getElementById('clean-progress-fill').style.width = pct + '%';
+              document.getElementById('clean-progress-pct').textContent = pct + '%';
+              document.getElementById('clean-freed').textContent = formatSize(event.freed_so_far);
+              document.getElementById('clean-completed').textContent = event.completed + ' / ' + event.total;
+
+              // Add to live feed
+              var feed = document.getElementById('clean-feed');
+              var row = document.createElement('div');
+              row.className = 'feed-row';
+              var statusCls = event.success ? 'success' : 'error';
+              var iconPath = event.success
+                ? '<circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/>'
+                : '<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>';
+              row.innerHTML = '<span class="icon ' + statusCls + '">'
+                + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + iconPath + '</svg></span>'
+                + '<span class="mono" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(event.path) + '</span>'
+                + '<span style="color:#8b949e;font-size:0.8rem">' + formatSize(event.freed_so_far || 0) + '</span>';
+              feed.appendChild(row);
+              feed.scrollTop = feed.scrollHeight;
+            }
+
+            if (event.type === 'clean_complete') {
+              cleanData = event;
+              cleanData.elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            }
+          } catch (e) {}
+        }
+      }
+    }
+
+    if (cleanData) {
+      setTimeout(function() { showComplete(cleanData); }, 500);
+    }
+  } catch (e) {
+    alert('Clean failed: ' + e.message);
+  }
+}
+
+// ====================================================================
+// Show complete report
+// ====================================================================
+function showComplete(data) {
+  showView('complete');
+
+  document.getElementById('complete-freed').textContent = formatSize(data.total_freed);
+  document.getElementById('complete-cleaned-count').textContent = data.completed - data.failed_count;
+  document.getElementById('complete-failed-count').textContent = data.failed_count;
+  document.getElementById('complete-time').textContent = (data.elapsed || '0.0') + 's';
+
+  // Fetch updated disk info for before/after comparison
+  fetch('/api/disk').then(function(r) { return r.json(); }).then(function(diskAfter) {
+    if (diskBefore) {
+      renderDiskCompare(diskBefore, diskAfter);
+    } else {
+      // fallback: just use after as baseline
+      renderDiskCompare(diskAfter, diskAfter);
+    }
+  }).catch(function() {});
+}
+
+function renderDiskCompare(before, after) {
+  var beforeUsed = (before.used / 1073741824).toFixed(1);
+  var afterUsed = (after.used / 1073741824).toFixed(1);
+  var beforeFree = (before.free / 1073741824).toFixed(1);
+  var afterFree = (after.free / 1073741824).toFixed(1);
+  var beforePct = before.percent;
+  var afterPct = after.percent;
+
+  var beforeCls = 'safe';
+  if (beforePct >= 90) beforeCls = 'danger';
+  else if (beforePct >= 75) beforeCls = 'warning';
+
+  var afterCls = 'safe';
+  if (afterPct >= 90) afterCls = 'danger';
+  else if (afterPct >= 75) afterCls = 'warning';
+
+  document.getElementById('compare-before-fill').className = 'disk-fill ' + beforeCls;
+  document.getElementById('compare-before-fill').style.width = beforePct + '%';
+  document.getElementById('compare-before-used').textContent = beforeUsed + ' GB';
+  document.getElementById('compare-before-free').textContent = beforeFree + ' GB ' + _t('disk.free');
+
+  document.getElementById('compare-after-fill').className = 'disk-fill ' + afterCls;
+  document.getElementById('compare-after-fill').style.width = afterPct + '%';
+  document.getElementById('compare-after-used').textContent = afterUsed + ' GB';
+  document.getElementById('compare-after-free').textContent = afterFree + ' GB ' + _t('disk.free');
+}
+
+// ====================================================================
+// Back to home
+// ====================================================================
+function goHome() {
+  scanItems = [];
+  selectedForClean = [];
+  knownFeedIds = {};
+  if (scanPollInterval) { clearInterval(scanPollInterval); scanPollInterval = null; }
+  updateSteps(1);
+  showView('empty');
+}
+
+// ====================================================================
+// HTML escaping helper
+// ====================================================================
+function escapeHtml(str) {
+  if (!str) return '';
+  var div = document.createElement('div');
+  div.appendChild(document.createTextNode(str));
+  return div.innerHTML;
+}
+
+// ====================================================================
+// Initialization
+// ====================================================================
+document.addEventListener('DOMContentLoaded', function() {
+  var urlLang = new URLSearchParams(window.location.search).get('lang') || '{{ lang }}';
+  loadTranslations(urlLang);
+
+  // Fetch initial disk info for before state
+  fetch('/api/disk').then(function(r) { return r.json(); }).then(function(data) {
+    diskBefore = data;
+  }).catch(function() {});
+
+  // Show empty view by default
+  showView('empty');
+});
+</script>
+
+</body>
+</html>
