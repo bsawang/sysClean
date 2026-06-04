@@ -79,6 +79,7 @@ SysClean 是一个面向 Windows 的本地 C 盘空间清理工具，以 Claude 
 | 图标 | **Lucide Icons** (SVG inline) | 单色线条图标，风格统一 |
 | 进程监控 | **psutil** | 跨平台进程/磁盘监控 |
 | 样式 | 纯 CSS (Github Dark 主题) | 无依赖，单文件 |
+| 国际化 | JSON 语言包 + Flask `g.lang` | 中/英文，URL 参数切换 |
 
 ---
 
@@ -212,15 +213,22 @@ ScannerEngine
 
 ```
 sysclean/
-├── app.py                # Flask 主入口 (路由 + SSE 推送)
+├── app.py                # Flask 主入口 (路由 + SSE 推送 + i18n)
 ├── scanner.py            # 扫描引擎 (各分类扫描器 + 风险判定)
-├── cleaner.py            # 清理执行器 (删除 + 回收站 + 回滚)
+├── cleaner.py            # 清理执行器 (回收站优先 + 日志)
+├── i18n/
+│   ├── __init__.py       # 翻译加载器 (get_text/get_all_texts)
+│   ├── zh.json           # 中文语言包
+│   └── en.json           # 英文语言包
 ├── templates/
-│   └── index.html        # 主页面 (HTMX + SSE)
+│   └── index.html        # 主页面 (HTMX + SSE + i18n)
 ├── static/
-│   └── style.css         # 样式
+│   ├── style.css         # 样式 (Github Dark)
+│   ├── htmx.min.js       # HTMX 本地兜底
+│   └── sse.js            # HTMX SSE 扩展本地兜底
 ├── requirements.txt      # flask, psutil
 ├── sysclean.md           # Claude Code Skill 指令文件
+├── logs/                 # 运行时创建，清理日志
 └── docs/
     └── superpowers/specs/2026-06-04-sysclean-design.md
 ```
@@ -238,7 +246,7 @@ Skill 文件是 Claude Code 的指令文件，告诉 Claude 如何操作这个�
 C 盘空间清理工具，通过 Web UI 选择分类扫描并清理
 
 ## Usage
-1. 运行 `pip install -r requirements.txt` 安装依赖
+1. 运行 `pip install -r requirements.txt` 安装依赖（可选 `python -m venv .venv` 虚拟环境）
 2. 运行 `python app.py` 启动服务
 3. 引导用户打开浏览器访问 http://localhost:5000
 4. 指导用户选择分类、扫描、勾选、确认清理
@@ -252,8 +260,8 @@ C 盘空间清理工具，通过 Web UI 选择分类扫描并清理
 
 ---
 
-## 8. 待定事项
+## 8. 已确认事项
 
-- [ ] 是否需要 Docker/虚拟环境隔离？
-- [ ] 是否支持多语言界面？
-- [ ] 日志记录到文件以便追溯
+- [x] **虚拟环境**: 不强制，`pip install -r requirements.txt` 即可，可选 `python -m venv .venv`
+- [x] **多语言**: 支持中/英文，Flask 端 `g.lang` 判断，JSON 语言包，URL 参数 `?lang=en|zh` 切换
+- [x] **日志记录**: 清理操作记录到 `logs/sysclean-YYYY-MM-DD.log`，含时间、操作类型、路径、结果
