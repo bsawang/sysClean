@@ -30,6 +30,8 @@ app = Flask(__name__)
 
 # In-memory state
 scan_results: list[ScanItem] = []
+scan_in_progress = False
+scan_lock = threading.Lock()
 scan_engine = ScannerEngine()
 
 
@@ -103,15 +105,25 @@ def api_disk():
 @app.route("/api/scan/start", methods=["POST"])
 def api_scan_start():
     """Start a scan in a background thread and return immediately."""
+    global scan_in_progress
     data = request.get_json(force=True)
     categories = data.get("categories")
 
     if not categories or not isinstance(categories, list):
         return jsonify({"error": "categories must be a non-empty list"}), 400
 
+    with scan_lock:
+        if scan_in_progress:
+            return jsonify({"error": "扫描正在进行中"}), 409
+        scan_in_progress = True
+
     def _run_scan():
-        global scan_results
-        scan_results = list(scan_engine.scan(categories))
+        global scan_results, scan_in_progress
+        try:
+            scan_results = list(scan_engine.scan(categories))
+        finally:
+            with scan_lock:
+                scan_in_progress = False
 
     t = threading.Thread(target=_run_scan, daemon=True)
     t.start()
@@ -121,7 +133,10 @@ def api_scan_start():
 @app.route("/api/scan/results")
 def api_scan_results():
     """Return all scan results as a JSON list."""
+    global scan_in_progress
     lang = getattr(g, "lang", "zh")
+    with scan_lock:
+        in_progress = scan_in_progress
     results = []
     for item in scan_results:
         results.append({
@@ -135,7 +150,7 @@ def api_scan_results():
             "risk_desc": item.risk_desc,
             "item_count": item.item_count,
         })
-    return jsonify(results)
+    return jsonify({"items": results, "total": len(results), "scanning": in_progress})
 
 
 @app.route("/api/clean/start", methods=["POST"])
