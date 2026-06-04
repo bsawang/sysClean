@@ -593,17 +593,42 @@ def _read_registered_programs():
                         except (OSError, ValueError):
                             return 0
 
+                    ustr = _read_str(sub_key, "UninstallString")
+
+                    # Try InstallLocation, then fallback to DisplayIcon directory
                     install_path = _read_str(sub_key, "InstallLocation")
+                    if not install_path or not os.path.isdir(install_path):
+                        icon = _read_str(sub_key, "DisplayIcon")
+                        if icon and os.path.isfile(icon):
+                            install_path = os.path.dirname(icon)
+                        elif icon and os.path.isdir(icon):
+                            install_path = icon
+
                     last_used = ""
+                    est_size = _read_int(sub_key, "EstimatedSize") * 1024
+
                     if install_path and os.path.isdir(install_path):
+                        # Compute size from folder if registry size is missing
+                        if est_size <= 0:
+                            try:
+                                total = 0
+                                for root, dirs, files in os.walk(install_path):
+                                    for f in files:
+                                        try:
+                                            total += os.path.getsize(os.path.join(root, f))
+                                        except OSError:
+                                            pass
+                                est_size = total
+                            except Exception:
+                                pass
+                        # Last used time from directory
                         try:
-                            mtime = os.path.getmtime(install_path)
                             from datetime import datetime
+                            mtime = os.path.getmtime(install_path)
                             last_used = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d")
                         except Exception:
                             pass
 
-                    ustr = _read_str(sub_key, "UninstallString")
                     # Detect install type
                     try:
                         is_msi = _read_int(sub_key, "WindowsInstaller") == 1
@@ -619,7 +644,7 @@ def _read_registered_programs():
                         "install_location": install_path,
                         "last_used": last_used,
                         "install_type": install_type,
-                        "estimated_size": _read_int(sub_key, "EstimatedSize") * 1024,  # KB → bytes
+                        "estimated_size": est_size,
                         "uninstall_string": ustr,
                         "source": "registry",
                     })
