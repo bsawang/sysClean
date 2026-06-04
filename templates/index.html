@@ -1741,10 +1741,8 @@ function startUninstall() {
                         }
                         if (ev.type === 'uninstall_complete') {
                             document.getElementById('uninstall-progress-fill').style.width = '100%';
-                            setTimeout(function() {
-                                document.getElementById('software-progress').classList.add('hidden');
-                                showSoftwareView();
-                            }, 1500);
+                            document.getElementById('software-progress').classList.add('hidden');
+                            showSoftwareView();
                         }
                     } catch(e) {}
                 });
