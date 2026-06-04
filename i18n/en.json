@@ -67,5 +67,6 @@
 
   "sandbox.mode": "Sandbox Mode",
   "sandbox.enter": "Sandbox Demo Mode",
-  "sandbox.exit": "Exit Sandbox Mode"
+  "sandbox.exit": "Exit Sandbox Mode",
+  "sandbox.simulate": "Sandbox Mode — simulated only, no files will be deleted"
 }

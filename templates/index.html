@@ -256,6 +256,9 @@
             </svg>
             <span data-i18n="confirm.warning">This operation will permanently delete files. They will not go to the Recycle Bin.</span>
           </div>
+          <div id="sandbox-notice" style="display:none;background:rgba(210,153,34,0.08);border:1px solid rgba(210,153,34,0.2);border-radius:6px;padding:10px 12px;font-size:0.82rem;color:#d29922;margin-top:6px">
+            🛡️ <span data-i18n="sandbox.simulate">沙盒模式 — 仅模拟流程，不会真实删除文件</span>
+          </div>
 
           <div class="modal-actions">
             <button class="btn btn-ghost" onclick="showView('results')" data-i18n="btn.cancel">Cancel</button>
@@ -757,6 +760,11 @@ function confirmClean() {
       + '</div>';
   });
   document.getElementById('confirm-summary').innerHTML = listHtml;
+
+  // Check sandbox status for notice
+  fetch('/api/sandbox/status').then(function(r) { return r.json(); }).then(function(d) {
+    document.getElementById('sandbox-notice').style.display = d.enabled ? 'block' : 'none';
+  }).catch(function() {});
 
   showView('confirm');
 }
