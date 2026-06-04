@@ -499,13 +499,9 @@
         <!-- Suggested follow-up actions -->
         <div id="complete-hints" style="max-width:500px;margin:0 auto 20px;text-align:left;border:1px solid #21262d;border-radius:8px;padding:12px;background:#161b22">
           <div style="font-size:0.82rem;font-weight:600;color:#8b949e;margin-bottom:8px" data-i18n="complete.hints.title">💡 Suggested Follow-up</div>
-          <div id="hint-recycle" style="display:flex;align-items:center;gap:8px;font-size:0.82rem;padding:6px 0;border-bottom:1px solid #21262d">
+          <div id="hint-recycle" style="display:flex;align-items:center;gap:8px;font-size:0.82rem;padding:6px 0">
             <span>🗑️ <span data-i18n="recycle.title">Recycle Bin</span></span>
             <span id="hint-recycle-size" style="margin-left:auto;font-weight:600;color:#d29922">-</span>
-          </div>
-          <div id="hint-search" style="display:flex;align-items:center;gap:8px;font-size:0.82rem;padding:6px 0">
-            <span>🔍 <span data-i18n="search.title">Search Index</span></span>
-            <span id="hint-search-size" style="margin-left:auto;font-weight:600;color:#d29922">-</span>
           </div>
         </div>
 
@@ -697,11 +693,6 @@ function refreshCompleteHints() {
         .then(function(r) { return r.json(); })
         .then(function(d) {
             document.getElementById('hint-recycle-size').textContent = d.size_fmt;
-        });
-    fetch('/api/search/status')
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-            document.getElementById('hint-search-size').textContent = d.size_fmt;
         });
 }
 
