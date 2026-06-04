@@ -1560,12 +1560,17 @@ function updateDriveFilter() {
 function renderSoftwareList(programs) {
     var html = '';
     programs.forEach(function(p) {
-        var colors = ['#58a6ff','#d29922','#f85149','#3fb950','#bc8cff','#f0883e','#79c0ff','#ff7b72'];
-    var cIdx = p.name.charCodeAt(0) % colors.length;
-    var avatar = '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:' + colors[cIdx] + '20;color:' + colors[cIdx] + ';font-size:0.78rem;font-weight:700;flex-shrink:0">' + escapeHtml(p.name.charAt(0).toUpperCase()) + '</span>';
+        var iconSrc = '';
+    if (p.display_icon && (p.display_icon.indexOf('.exe') > 0 || p.display_icon.indexOf('.dll') > 0 || p.display_icon.indexOf('.ico') > 0)) {
+        iconSrc = '/api/icon?path=' + encodeURIComponent(p.display_icon.split(',')[0].trim());
+    }
+    var iconHtml = '<span class="soft-icon-wrap">'
+        + (iconSrc ? '<img src="' + iconSrc + '" style="width:22px;height:22px;border-radius:4px" onerror="this.style.display=\'none\';this.parentNode.querySelector(\'.soft-icon\').classList.add(\'show\')" alt="">' : '')
+        + '<span class="soft-icon" data-name="' + escapeHtml(p.name) + '"></span>'
+        + '</span>';
     html += '<div class="result-item soft-item" style="border-bottom:1px solid #21262d" onclick="toggleSoftwareCb(this)" data-checked="0">'
             + '<input type="checkbox" class="software-cb" data-name="' + escapeHtml(p.name) + '">'
-            + avatar
+            + iconHtml
             + '<div style="flex:1;min-width:0;margin-left:6px">'
             + '<div style="display:flex;align-items:baseline;gap:8px">'
             + '<div style="flex:1;font-size:0.92rem;font-weight:600;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
@@ -1586,6 +1591,21 @@ function renderSoftwareList(programs) {
             + '</div>';
     });
     document.getElementById('software-list').innerHTML = html || '<div style="padding:16px;text-align:center;color:#8b949e">' + _t('software.empty') + '</div>';
+    // Fill fallback icon initials
+    var colors = ['#58a6ff','#d29922','#f85149','#3fb950','#bc8cff','#f0883e','#79c0ff','#ff7b72'];
+    document.querySelectorAll('.soft-icon').forEach(function(el) {
+        var name = el.getAttribute('data-name') || '?';
+        var cIdx = name.charCodeAt(0) % colors.length;
+        el.style.background = colors[cIdx] + '20';
+        el.style.color = colors[cIdx];
+        el.textContent = name.charAt(0).toUpperCase();
+        // Show fallback icon if no img sibling loaded
+        var wrap = el.parentNode;
+        var img = wrap.querySelector('img');
+        if (!img || img.style.display === 'none' || !img.complete || img.naturalWidth === 0) {
+            el.classList.add('show');
+        }
+    });
 }
 
 var _softwareSortField = 'name';

@@ -745,6 +745,9 @@ a:hover { text-decoration: underline; }
 #software-list .result-item:hover { background: #1c2128; }
 #software-list .soft-item.selected { background: rgba(88,166,255,0.08); }
 #drive-filter .btn.active { background: rgba(88,166,255,0.15); color: #58a6ff; border-color: rgba(88,166,255,0.3); }
+.soft-icon-wrap { position:relative; display:inline-flex; width:22px; height:22px; flex-shrink:0; }
+.soft-icon-wrap .soft-icon { display:none; align-items:center; justify-content:center; width:22px; height:22px; border-radius:5px; font-size:0.78rem; font-weight:700; position:absolute; inset:0; }
+.soft-icon-wrap .soft-icon.show { display:flex; }
 #software-list .soft-item.selected:hover { background: rgba(88,166,255,0.12); }
 
 /* Completion hints */

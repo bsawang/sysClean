@@ -14,6 +14,7 @@ import threading
 import winreg
 from pathlib import Path
 
+import base64
 import ctypes
 import psutil
 from typing import Optional
@@ -634,6 +635,7 @@ def _read_registered_programs():
                         "install_type": install_type,
                         "estimated_size": est_size,
                         "uninstall_string": ustr,
+                        "display_icon": _read_str(sub_key, "DisplayIcon"),
                         "source": "registry",
                     })
         finally:
@@ -741,6 +743,54 @@ def api_uninstall_start():
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Software Icon API (extract from .exe/.dll via PowerShell)
+# ---------------------------------------------------------------------------
+
+_icon_cache: dict[str, bytes] = {}
+
+
+@app.route("/api/icon")
+def api_icon():
+    """Extract icon from an executable path and return as PNG.
+
+    Uses PowerShell + .NET System.Drawing to extract and convert.
+    Results are cached in memory to avoid repeated subprocess calls.
+    """
+    path = request.args.get("path", "")
+    if not path or not os.path.exists(path):
+        return "", 404
+
+    if path in _icon_cache:
+        return Response(_icon_cache[path], mimetype="image/png")
+
+    try:
+        # PowerShell script: extract icon via .NET and output as base64 PNG
+        ps = (
+            "Add-Type -AssemblyName System.Drawing; "
+            f"$icon = [System.Drawing.Icon]::ExtractAssociatedIcon('{path}'); "
+            "if ($icon) { "
+            "$bmp = $icon.ToBitmap(); "
+            "$ms = New-Object System.IO.MemoryStream; "
+            "$bmp.Save($ms, [System.Drawing.Imaging.ImageFormat]::Png); "
+            "Write-Output ([System.Convert]::ToBase64String($ms.ToArray())); "
+            "$ms.Close(); $bmp.Dispose(); $icon.Dispose() }"
+        )
+        r = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", ps],
+            capture_output=True, text=True, timeout=15,
+        )
+        if r.returncode == 0 and r.stdout.strip():
+            import base64
+            img_data = base64.b64decode(r.stdout.strip())
+            if len(img_data) > 100:  # Sanity check: valid PNG > 100 bytes
+                _icon_cache[path] = img_data
+                return Response(img_data, mimetype="image/png")
+    except Exception:
+        pass
+    return "", 404
+
 
 if __name__ == "__main__":
     if not is_admin() and "--elevated" not in sys.argv:
