@@ -89,6 +89,7 @@
   "operation.busy": "Another operation is in progress, please wait",
   "admin.required": "Admin privileges required",
   "admin.limited": "Limited by user permissions",
+  "operations.title": "Operations",
   "recycle.title": "Recycle Bin",
   "recycle.empty": "Empty Recycle Bin",
   "recycle.confirm": "Are you sure you want to empty the Recycle Bin? This operation cannot be undone.",

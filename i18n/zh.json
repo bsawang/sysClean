@@ -89,6 +89,7 @@
   "operation.busy": "当前有操作进行中，请等待完成",
   "admin.required": "需要管理员权限",
   "admin.limited": "部分结果受权限限制",
+  "operations.title": "操作",
   "recycle.title": "回收站",
   "recycle.empty": "清空回收站",
   "recycle.confirm": "确定要清空回收站吗？此操作不可撤销，文件将被永久删除。",

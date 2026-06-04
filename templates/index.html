@@ -205,44 +205,35 @@
       <!-- ───── Independent Operations ───── -->
       <hr style="border:none;border-top:1px solid #21262d;margin:14px 0;">
 
+      <!-- ───── Operations ───── -->
+      <div style="font-size:0.72rem;font-weight:600;color:#8b949e;text-transform:uppercase;letter-spacing:0.04em;margin:10px 0 4px 10px" data-i18n="operations.title">Operations</div>
+
       <!-- Recycle Bin -->
-      <div id="recycle-section" style="margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:#8b949e;margin-bottom:4px">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-          </svg>
-          <span data-i18n="recycle.title" style="font-weight:500;color:#c9d1d9">Recycle Bin</span>
-          <span id="recycle-size" style="margin-left:auto;font-size:0.78rem;color:#d29922">-</span>
-        </div>
-        <button class="btn btn-ghost btn-sm btn-operation" onclick="emptyRecycleBin()" style="width:100%;font-size:0.82rem;" id="btn-empty-recycle">
-          <span data-i18n="recycle.empty">Empty Recycle Bin</span>
-        </button>
+      <div class="tool-item btn-operation" id="recycle-section" onclick="emptyRecycleBin()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+        <span class="tool-label" data-i18n="recycle.title">Recycle Bin</span>
+        <span id="recycle-size" class="tool-value">-</span>
       </div>
 
       <!-- Search Index -->
-      <div id="search-section" style="margin-bottom:10px">
-        <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:#8b949e;margin-bottom:4px">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-          </svg>
-          <span data-i18n="search.title" style="font-weight:500;color:#c9d1d9">Search Index</span>
-          <span id="search-size" style="margin-left:auto;font-size:0.78rem;color:#d29922">-</span>
-        </div>
-        <button class="btn btn-ghost btn-sm btn-operation" onclick="rebuildSearchIndex()" style="width:100%;font-size:0.82rem;" id="btn-rebuild-index">
-          <span data-i18n="search.rebuild">Rebuild Index</span>
-        </button>
-        <div id="search-status" style="font-size:0.72rem;color:#8b949e;margin-top:2px;text-align:center;"></div>
+      <div class="tool-item btn-operation" id="search-section" onclick="rebuildSearchIndex()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span class="tool-label" data-i18n="search.title">Search Index</span>
+        <span id="search-size" class="tool-value">-</span>
+        <span id="search-status" class="tool-status"></span>
       </div>
 
       <!-- Software Manager -->
-      <div id="software-section" style="margin-bottom:10px">
-        <button class="btn btn-ghost btn-sm btn-operation" onclick="showSoftwareView()" style="width:100%;font-size:0.82rem;display:flex;align-items:center;gap:6px" id="btn-software">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
-            <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-          </svg>
-          <span data-i18n="software.title">Software Manager</span>
-          <span id="software-count" style="margin-left:auto;font-size:0.78rem;color:#8b949e">-</span>
-        </button>
+      <div class="tool-item btn-operation" id="software-section" onclick="showSoftwareView()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+        </svg>
+        <span class="tool-label" data-i18n="software.title">Software</span>
+        <span id="software-count" class="tool-value">-</span>
       </div>
 
       <hr style="border:none;border-top:1px solid #21262d;margin:14px 0;">
@@ -666,8 +657,6 @@ function emptyRecycleBin() {
     if (isBusy) { alert(busyMsg()); return; }
     if (!confirm(_t('recycle.confirm'))) return;
     startBusyPolling();
-    var btn = document.getElementById('btn-empty-recycle');
-    btn.disabled = true;
     fetch('/api/recycle/empty', { method: 'POST' })
         .then(function(r) { return r.json(); })
         .then(function(d) {
@@ -677,8 +666,7 @@ function emptyRecycleBin() {
                 alert(d.error || 'Failed');
             }
         })
-        .catch(function() { alert('Failed to empty Recycle Bin'); })
-        .finally(function() { btn.disabled = false; });
+        .catch(function() { alert('Failed to empty Recycle Bin'); });
 }
 
 function refreshCompleteHints() {
