@@ -467,14 +467,12 @@ function renderDiskCardHtml(data) {
   if (pct >= 90) cls = 'danger';
   else if (pct >= 75) cls = 'warning';
   var sandboxBadge = '';
-  var titleKey = 'disk.title';
   if (data.sandbox) {
     sandboxBadge = '<div style="font-size:0.72rem;color:#d29922;margin-top:6px;text-align:center;">\u{1F6FE} ' + _t('sandbox.mode') + '</div>';
-    titleKey = 'sandbox.mode';
   }
   return '<div class="disk-card">'
     + '<div class="disk-header">'
-    + '<span class="disk-label">' + _t(titleKey) + '</span>'
+    + '<span class="disk-label">' + _t('disk.title') + '</span>'
     + '<span class="disk-percent ' + cls + '">' + pct + '%</span>'
     + '</div>'
     + '<div class="disk-bar"><div class="disk-fill ' + cls + '" style="width:' + pct + '%"></div></div>'
