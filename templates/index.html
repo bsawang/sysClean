@@ -1632,7 +1632,8 @@ function getFilteredSoftware() {
     var q = document.getElementById('software-filter').value.toLowerCase();
     var list = allPrograms.filter(function(p) {
         if (q && p.name.toLowerCase().indexOf(q) === -1) return false;
-        if (window._driveFilter && p.install_location) {
+        if (window._driveFilter) {
+            if (!p.install_location) return false;
             var d = p.install_location.charAt(0).toUpperCase();
             if (d !== window._driveFilter) return false;
         }
