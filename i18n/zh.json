@@ -102,6 +102,7 @@
   "search.ready": "正常",
   "search.confirm": "确定要重建搜索索引吗？\n\n重建期间 Windows 搜索将不可用，索引重建过程可能需要数小时，且 CPU 占用较高。\n\n此操作不可撤销！",
   "software.title": "软件管理",
+  "software.manage": "管理程序",
   "software.uninstall": "卸载选中",
   "software.loading": "正在加载已安装软件列表...",
   "software.empty": "未找到已安装软件",

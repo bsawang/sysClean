@@ -716,19 +716,17 @@ a:hover { text-decoration: underline; }
 /* Completion hints */
 .hint-value { font-weight: 600; color: #d29922; }
 
-/* Operations tool items (Recycle Bin, Search Index, Software) */
-.tool-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  color: #c9d1d9;
-  transition: background 0.15s ease;
+/* Operations cards (Recycle Bin, Search Index, Software) */
+.op-card {
+  border: 1px solid #21262d;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #161b22;
+  transition: border-color 0.15s;
 }
-.tool-item:hover { background: rgba(88, 166, 255, 0.08); }
-.tool-item svg { width: 16px; height: 16px; flex-shrink: 0; color: #8b949e; }
-.tool-label { flex: 1; font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.tool-value { font-size: 0.78rem; color: #d29922; flex-shrink: 0; }
-.tool-status { font-size: 0.7rem; color: #8b949e; flex-shrink: 0; margin-left: 2px; }
+.op-card:hover { border-color: #30363d; }
+.op-card-header { display: flex; align-items: center; gap: 6px; }
+.op-card-header svg { width: 16px; height: 16px; flex-shrink: 0; color: #8b949e; }
+.op-card-label { flex: 1; font-size: 0.82rem; font-weight: 500; color: #c9d1d9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.op-card-value { font-size: 0.78rem; color: #d29922; flex-shrink: 0; }
