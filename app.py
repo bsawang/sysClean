@@ -197,7 +197,7 @@ def api_scan_start():
     t = threading.Thread(target=_run_scan, daemon=True)
     try:
         t.start()
-    except:
+    except Exception:
         release_operation()
         with scan_lock:
             scan_in_progress = False
@@ -513,16 +513,24 @@ def _read_registered_programs():
     for hkey, subkey in registry_paths:
         try:
             key = winreg.OpenKey(hkey, subkey, 0, winreg.KEY_READ)
+        except OSError:
+            continue
+        try:
             for i in range(winreg.QueryInfoKey(key)[0]):
                 try:
                     sub_name = winreg.EnumKey(key, i)
+                except OSError:
+                    break
+                try:
                     sub_key = winreg.OpenKey(key, sub_name)
+                except OSError:
+                    continue
+                with sub_key:
                     try:
                         name, _ = winreg.QueryValueEx(sub_key, "DisplayName")
                     except OSError:
                         continue
 
-                    # Dedup by display name
                     if name in seen:
                         continue
                     seen.add(name)
@@ -550,12 +558,8 @@ def _read_registered_programs():
                         "uninstall_string": _read_str(sub_key, "UninstallString"),
                         "source": "registry",
                     })
-                    winreg.CloseKey(sub_key)
-                except OSError:
-                    continue
+        finally:
             winreg.CloseKey(key)
-        except OSError:
-            continue
 
     return programs
 
@@ -588,17 +592,12 @@ def api_uninstall_start():
     if not acquire_operation("uninstalling"):
         return jsonify({"error": "另一个操作正在进行中"}), 409
 
-    def _get_uninstall_string(name):
-        for p in _read_registered_programs():
-            if p["name"] == name:
-                return p["uninstall_string"]
-        return ""
-
     def generate():
+        all_progs = _read_registered_programs()
+        lookup = {p["name"]: p["uninstall_string"] for p in all_progs}
         try:
             total = len(names)
             for i, name in enumerate(names):
-                # Emit progress
                 yield {
                     "type": "uninstall_progress",
                     "current": name,
@@ -606,7 +605,7 @@ def api_uninstall_start():
                     "total": total,
                 }
 
-                ustr = _get_uninstall_string(name)
+                ustr = lookup.get(name, "")
                 if not ustr:
                     yield {
                         "type": "uninstall_result",

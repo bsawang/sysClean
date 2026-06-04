@@ -604,7 +604,7 @@ function riskTag(risk) {
 // ====================================================================
 var isBusy = false;
 var busyPollInterval = null;
-const BUSY_MSG = '当前有操作进行中，请等待完成';
+function busyMsg() { return _t('operation.busy'); }
 
 function startBusyPolling() {
     if (busyPollInterval) return;
@@ -654,7 +654,7 @@ function refreshRecycleStatus() {
 }
 
 function emptyRecycleBin() {
-    if (isBusy) { alert(BUSY_MSG); return; }
+    if (isBusy) { alert(busyMsg()); return; }
     if (!confirm(_t('recycle.confirm'))) return;
     startBusyPolling();
     var btn = document.getElementById('btn-empty-recycle');
@@ -705,7 +705,7 @@ function refreshSearchStatus() {
 }
 
 function rebuildSearchIndex() {
-    if (isBusy) { alert(BUSY_MSG); return; }
+    if (isBusy) { alert(busyMsg()); return; }
     if (!confirm(_t('search.confirm'))) return;
     startBusyPolling();
     var btn = document.getElementById('btn-rebuild-index');
@@ -815,7 +815,7 @@ function updateSteps(activeStep) {
 // Scan flow: startScan
 // ====================================================================
 function startScan() {
-  if (isBusy) { alert(BUSY_MSG); return; }
+  if (isBusy) { alert(busyMsg()); return; }
   startBusyPolling();
   var checked = document.querySelectorAll('.cat-item input:checked');
   if (checked.length === 0) {
@@ -1058,7 +1058,7 @@ function sandboxExitToResults() {
 // Confirm clean
 // ====================================================================
 function confirmClean() {
-  if (isBusy) { alert(BUSY_MSG); return; }
+  if (isBusy) { alert(busyMsg()); return; }
   var selected = getSelectedItems();
   if (selected.length === 0) {
     alert(_t('clean.select_none'));
@@ -1520,7 +1520,7 @@ function startUninstall() {
     }
     if (!confirm(_t('software.confirm') + ' (' + selected.length + ' ' + _t('results.items') + ')')) return;
 
-    if (isBusy) { alert(BUSY_MSG); return; }
+    if (isBusy) { alert(busyMsg()); return; }
     startBusyPolling();
 
     document.getElementById('software-progress').classList.remove('hidden');
