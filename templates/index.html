@@ -966,18 +966,6 @@ function showComplete(data) {
   window._cleanItems = data.items || [];
   window._cleanSortAsc = false;
   renderCleanDetailList();
-      var icon = item.success
-        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 10"/></svg>'
-        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f85149" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
-      listHtml += '<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;font-size:0.82rem;border-bottom:1px solid #21262d">'
-        + icon
-        + '<span class="mono" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8b949e">' + escapeHtml(item.path) + '</span>'
-        + '<span style="color:' + (item.success ? '#3fb950' : '#f85149') + ';white-space:nowrap">'
-        + (item.success ? formatSize(item.size) : _t('clean.failed') + (item.reason ? ' - ' + escapeHtml(item.reason) : ''))
-        + '</span></div>';
-    });
-  }
-  listEl.innerHTML = listHtml;
 
   // Fetch updated disk info for before/after comparison
   fetch('/api/disk').then(function(r) { return r.json(); }).then(function(diskAfter) {
