@@ -668,20 +668,77 @@ function refreshRecycleStatus() {
         });
 }
 
+// ====================================================================
+// Web confirm dialog (replaces browser confirm)
+// ====================================================================
+function webConfirm(msg, title) {
+    return new Promise(function(resolve) {
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6)';
+        var box = document.createElement('div');
+        box.className = 'modal-box';
+        box.style.cssText = 'max-width:480px;width:90%;padding:20px';
+        if (title) {
+            var h = document.createElement('div');
+            h.style.cssText = 'font-size:1rem;font-weight:600;color:#c9d1d9;margin-bottom:12px';
+            h.textContent = title;
+            box.appendChild(h);
+        }
+        var msgEl = document.createElement('div');
+        msgEl.style.cssText = 'font-size:0.88rem;color:#8b949e;margin-bottom:20px;line-height:1.6;white-space:pre-wrap';
+        msgEl.textContent = msg;
+        box.appendChild(msgEl);
+        var actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
+        var cancelBtn = document.createElement('button');
+        cancelBtn.className = 'btn btn-ghost btn-sm';
+        cancelBtn.textContent = _t('btn.cancel');
+        var confirmBtn = document.createElement('button');
+        confirmBtn.className = 'btn btn-danger btn-sm';
+        confirmBtn.textContent = _t('btn.confirm');
+        actions.appendChild(cancelBtn);
+        actions.appendChild(confirmBtn);
+        box.appendChild(actions);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        function close(result) {
+            document.body.removeChild(overlay);
+            resolve(result);
+        }
+        cancelBtn.onclick = function() { close(false); };
+        confirmBtn.onclick = function() { close(true); };
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) close(false); });
+        // Keyboard: Enter to confirm, Escape to cancel
+        var keyHandler = function(e) {
+            if (e.key === 'Escape') { close(false); }
+            if (e.key === 'Enter') { close(true); }
+        };
+        document.addEventListener('keydown', keyHandler);
+        // Remove keyboard listener when closed
+        var origClose = close;
+        close = function(r) { document.removeEventListener('keydown', keyHandler); origClose(r); };
+        confirmBtn.focus();
+    });
+}
+
 function emptyRecycleBin() {
     if (isBusy) { alert(busyMsg()); return; }
-    if (!confirm(_t('recycle.confirm'))) return;
-    startBusyPolling();
-    fetch('/api/recycle/empty', { method: 'POST' })
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-            if (d.status === 'emptied') {
-                refreshRecycleStatus();
-            } else {
-                alert(d.error || 'Failed');
-            }
-        })
-        .catch(function() { alert('Failed to empty Recycle Bin'); });
+    webConfirm(_t('recycle.confirm')).then(function(ok) {
+        if (!ok) return;
+        startBusyPolling();
+        fetch('/api/recycle/empty', { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.status === 'emptied') {
+                    refreshRecycleStatus();
+                } else {
+                    alert(d.error || 'Failed');
+                }
+            })
+            .catch(function() { alert('Failed to empty Recycle Bin'); });
+    });
 }
 
 function refreshCompleteHints() {
@@ -746,21 +803,23 @@ function toggleSearchService(enable) {
 
 function rebuildSearchIndex() {
     if (isBusy) { alert(busyMsg()); return; }
-    if (!confirm(_t('search.confirm'))) return;
-    startBusyPolling();
-    var btn = document.getElementById('btn-rebuild-index');
-    btn.disabled = true;
-    fetch('/api/search/rebuild', { method: 'POST' })
-        .then(function(r) { return r.json(); })
-        .then(function(d) {
-            if (d.status === 'rebuilding') {
-                refreshSearchStatus();
-            } else {
-                alert(d.error || 'Failed');
-                btn.disabled = false;
-            }
-        })
-        .catch(function() { alert('Failed'); btn.disabled = false; });
+    webConfirm(_t('search.confirm')).then(function(ok) {
+        if (!ok) return;
+        startBusyPolling();
+        var btn = document.getElementById('btn-rebuild-index');
+        btn.disabled = true;
+        fetch('/api/search/rebuild', { method: 'POST' })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.status === 'rebuilding') {
+                    refreshSearchStatus();
+                } else {
+                    alert(d.error || 'Failed');
+                    btn.disabled = false;
+                }
+            })
+            .catch(function() { alert('Failed'); btn.disabled = false; });
+    });
 }
 
 // ====================================================================
@@ -1684,7 +1743,7 @@ function selectAllSoftware(select) {
     refreshUninstallCount();
 }
 
-function startUninstall() {
+async function startUninstall() {
     var selected = [];
     document.querySelectorAll('.software-cb:checked').forEach(function(cb) {
         selected.push(cb.getAttribute('data-name'));
@@ -1697,12 +1756,13 @@ function startUninstall() {
     if (isBusy) { alert(busyMsg()); return; }
 
     // Build confirm message with full list
-    var msg = _t('software.confirm') + '\n';
+    var msg = _t('software.confirm');
     for (var k = 0; k < selected.length; k++) {
-        msg += '\n  ' + (k+1) + '. ' + selected[k];
+        msg += '\n' + (k+1) + '. ' + selected[k];
     }
     msg += '\n\n' + _t('software.uninstall') + ' (' + selected.length + ' ' + _t('results.items') + ')?';
-    if (!confirm(msg)) return;
+    var confirmed = await webConfirm(msg);
+    if (!confirmed) return;
 
     // Update button count immediately
     refreshUninstallCount();
