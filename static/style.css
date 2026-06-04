@@ -214,10 +214,15 @@ a:hover { text-decoration: underline; }
 
 .cat-label {
   flex: 1;
+  min-width: 0;
   font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cat-badge {
+  flex-shrink: 0;
   font-size: 0.72rem;
   padding: 1px 6px;
   border-radius: 10px;

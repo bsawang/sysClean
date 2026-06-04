@@ -149,7 +149,7 @@
         </svg>
         <span class="cat-label" data-i18n="cat.sysdumps">System Dumps</span>
         <span class="cat-badge" data-i18n="cat.sysdumps.badge">Dumps</span>
-        <span class="admin-hint" style="display:none;font-size:0.7rem;color:#d29922;margin-left:4px" data-i18n="admin.limited">⚠</span>
+        <span class="admin-hint" style="display:none;font-size:0.7rem;color:#d29922;flex-shrink:0" data-i18n="admin.limited">⚠️</span>
       </label>
 
       <!-- Category: package -->
@@ -190,59 +190,64 @@
         <span data-i18n="btn.scan">Start Scan</span>
       </button>
 
-      <!-- Risk legend -->
-      <div class="legend">
-        <div class="legend-title" style="width:100%;font-size:0.72rem;font-weight:600;color:#8b949e;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px" data-i18n="risk.legend.title">Risk Levels</div>
-        <div class="legend-item"><span class="legend-dot safe"></span><span data-i18n="risk.legend.safe">Safe to delete</span></div>
-        <div class="legend-item"><span class="legend-dot caution"></span><span data-i18n="risk.legend.caution">Review before cleaning</span></div>
-        <div class="legend-item"><span class="legend-dot danger"></span><span data-i18n="risk.legend.danger">Proceed with care</span></div>
-      </div>
-      <!-- Recycle Bin -->
+      <!-- ───── Independent Operations ───── -->
       <hr style="border:none;border-top:1px solid #21262d;margin:14px 0;">
-      <div id="recycle-section">
-        <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:#8b949e;margin-bottom:6px">
+
+      <!-- Recycle Bin -->
+      <div id="recycle-section" style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:#8b949e;margin-bottom:4px">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
           </svg>
-          <span data-i18n="recycle.title">Recycle Bin</span>
+          <span data-i18n="recycle.title" style="font-weight:500;color:#c9d1d9">Recycle Bin</span>
           <span id="recycle-size" style="margin-left:auto;font-size:0.78rem;color:#d29922">-</span>
         </div>
         <button class="btn btn-ghost btn-sm btn-operation" onclick="emptyRecycleBin()" style="width:100%;font-size:0.82rem;" id="btn-empty-recycle">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
           <span data-i18n="recycle.empty">Empty Recycle Bin</span>
         </button>
       </div>
+
       <!-- Search Index -->
-      <div id="search-section" style="margin-top:10px">
-        <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:#8b949e;margin-bottom:6px">
+      <div id="search-section" style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:#8b949e;margin-bottom:4px">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
-          <span data-i18n="search.title">Search Index</span>
+          <span data-i18n="search.title" style="font-weight:500;color:#c9d1d9">Search Index</span>
           <span id="search-size" style="margin-left:auto;font-size:0.78rem;color:#d29922">-</span>
         </div>
         <button class="btn btn-ghost btn-sm btn-operation" onclick="rebuildSearchIndex()" style="width:100%;font-size:0.82rem;" id="btn-rebuild-index">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
           <span data-i18n="search.rebuild">Rebuild Index</span>
         </button>
-        <div id="search-status" style="font-size:0.72rem;color:#8b949e;margin-top:4px;text-align:center;"></div>
+        <div id="search-status" style="font-size:0.72rem;color:#8b949e;margin-top:2px;text-align:center;"></div>
       </div>
-      <!-- Software Management -->
-      <div id="software-section" style="margin-top:10px">
-        <button class="btn btn-ghost btn-sm btn-operation" onclick="showSoftwareView()" style="width:100%;font-size:0.82rem;" id="btn-software">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+
+      <!-- Software Manager -->
+      <div id="software-section" style="margin-bottom:10px">
+        <button class="btn btn-ghost btn-sm btn-operation" onclick="showSoftwareView()" style="width:100%;font-size:0.82rem;display:flex;align-items:center;gap:6px" id="btn-software">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
             <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
           </svg>
           <span data-i18n="software.title">Software Manager</span>
           <span id="software-count" style="margin-left:auto;font-size:0.78rem;color:#8b949e">-</span>
         </button>
       </div>
+
       <!-- Sandbox toggle -->
       <hr style="border:none;border-top:1px solid #21262d;margin:14px 0;">
       <button class="btn btn-ghost btn-sm" id="btn-sandbox" onclick="toggleSandbox()" style="width:100%;font-size:0.82rem;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> <span data-i18n="sandbox.enter">沙盒体验模式</span>
       </button>
       <div id="sandbox-status" style="font-size:0.72rem;color:#8b949e;margin-top:4px;text-align:center;"></div>
+
+      <!-- Risk legend (always at bottom) -->
+      <hr style="border:none;border-top:1px solid #21262d;margin:14px 0;">
+      <div class="legend">
+        <div class="legend-title" style="width:100%;font-size:0.72rem;font-weight:600;color:#8b949e;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px" data-i18n="risk.legend.title">Risk Levels</div>
+        <div class="legend-item"><span class="legend-dot safe"></span><span data-i18n="risk.legend.safe">Safe to delete</span></div>
+        <div class="legend-item"><span class="legend-dot caution"></span><span data-i18n="risk.legend.caution">Review before cleaning</span></div>
+        <div class="legend-item"><span class="legend-dot danger"></span><span data-i18n="risk.legend.danger">Proceed with care</span></div>
+      </div>
 
     </aside>
 
