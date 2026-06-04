@@ -468,17 +468,17 @@ function renderDiskCardHtml(data) {
   else if (pct >= 75) cls = 'warning';
   var sandboxBadge = '';
   if (data.sandbox) {
-    sandboxBadge = '<div style="font-size:0.72rem;color:#d29922;margin-top:6px;text-align:center;">\u{1F6FE} ' + _t('sandbox.mode') + '</div>';
+    sandboxBadge = '<div style="font-size:0.72rem;color:#d29922;margin-top:6px;text-align:center;">\u{1F6FE} <span data-i18n="sandbox.mode">Sandbox Mode</span></div>';
   }
   return '<div class="disk-card">'
     + '<div class="disk-header">'
-    + '<span class="disk-label">' + _t('disk.title') + '</span>'
+    + '<span class="disk-label" data-i18n="disk.title">C: Drive</span>'
     + '<span class="disk-percent ' + cls + '">' + pct + '%</span>'
     + '</div>'
     + '<div class="disk-bar"><div class="disk-fill ' + cls + '" style="width:' + pct + '%"></div></div>'
     + '<div class="disk-info">'
-    + '<span>' + _t('disk.used') + ': ' + usedGB + ' GB / ' + totalGB + ' GB</span>'
-    + '<span>' + _t('disk.free') + ': ' + freeGB + ' GB</span>'
+    + '<span><span data-i18n="disk.used">Used</span>: ' + usedGB + ' GB / ' + totalGB + ' GB</span>'
+    + '<span><span data-i18n="disk.free">Free</span>: ' + freeGB + ' GB</span>'
     + '</div>' + sandboxBadge + '</div>';
 }
 
