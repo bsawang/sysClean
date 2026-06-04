@@ -1693,9 +1693,19 @@ function startUninstall() {
         alert(_t('software.select_none'));
         return;
     }
-    if (!confirm(_t('software.confirm') + ' (' + selected.length + ' ' + _t('results.items') + ')')) return;
 
     if (isBusy) { alert(busyMsg()); return; }
+
+    // Build confirm message with full list
+    var msg = _t('software.confirm') + '\n';
+    for (var k = 0; k < selected.length; k++) {
+        msg += '\n  ' + (k+1) + '. ' + selected[k];
+    }
+    msg += '\n\n' + _t('software.uninstall') + ' (' + selected.length + ' ' + _t('results.items') + ')?';
+    if (!confirm(msg)) return;
+
+    // Update button count immediately
+    refreshUninstallCount();
     startBusyPolling();
 
     document.getElementById('software-progress').classList.remove('hidden');
@@ -1742,7 +1752,7 @@ function startUninstall() {
                         if (ev.type === 'uninstall_complete') {
                             document.getElementById('uninstall-progress-fill').style.width = '100%';
                             document.getElementById('software-progress').classList.add('hidden');
-                            showSoftwareView();
+                            refreshUninstallCount();
                         }
                     } catch(e) {}
                 });
