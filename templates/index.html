@@ -462,6 +462,19 @@ document.body.addEventListener('htmx:afterSwap', function(evt) {
   }
 });
 
+function refreshDiskCard() {
+  var lang = new URLSearchParams(window.location.search).get('lang') || '{{ lang }}';
+  fetch('/api/disk?lang=' + lang)
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      document.getElementById('disk-card').innerHTML = renderDiskCardHtml(data);
+      document.querySelectorAll('#disk-card [data-i18n]').forEach(function(el) {
+        el.textContent = _t(el.getAttribute('data-i18n'));
+      });
+    })
+    .catch(function() {});
+}
+
 function renderDiskCardHtml(data) {
   var totalGB = (data.total / 1073741824).toFixed(1);
   var usedGB = (data.used / 1073741824).toFixed(1);
@@ -1002,7 +1015,7 @@ async function toggleSandbox() {
         status.textContent = '';
         btn.innerHTML = '🛡️ <span data-i18n="sandbox.enter">沙盒体验模式</span>';
         // Reload disk info and results
-        htmx.trigger('#disk-card', 'htmx:load');
+        refreshDiskCard();
         document.getElementById('view-results').classList.add('hidden');
         showView('empty');
       }
@@ -1015,7 +1028,7 @@ async function toggleSandbox() {
         status.textContent = '🛡️ ' + _t('sandbox.active');
         btn.innerHTML = '🛡️ <span data-i18n="sandbox.exit">退出沙盒模式</span>';
         // Reload disk info
-        htmx.trigger('#disk-card', 'htmx:load');
+        refreshDiskCard();
         document.getElementById('view-results').classList.add('hidden');
         showView('empty');
       }
