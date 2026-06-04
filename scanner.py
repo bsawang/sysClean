@@ -343,7 +343,7 @@ class ScannerEngine:
                         )
 
     def scan_thumbcache(self):
-        """Scan Windows thumbnail cache (thumbcache_*.db, iconcache_*.db)."""
+        """Scan Windows thumbnail cache (whole Explorer dir — thumbcache_*.db, iconcache_*.db)."""
         explorer = (
             self.user_home
             / "AppData"
@@ -469,7 +469,7 @@ class ScannerEngine:
         candidates = [
             (code / "Cache", "VSCode main cache", RiskLevel.SAFE),
             (code / "CachedData", "VSCode cached data", RiskLevel.SAFE),
-            (code / "User" / "workspaceStorage", "VSCode workspace state*", RiskLevel.SAFE),
+            (code / "User" / "workspaceStorage", "VSCode workspace state", RiskLevel.SAFE),
         ]
         for path_, desc, risk in candidates:
             if not path_.exists():
