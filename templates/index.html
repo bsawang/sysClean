@@ -1515,12 +1515,18 @@ function renderSoftwareList(programs) {
             + '<input type="checkbox" class="software-cb" data-name="' + escapeHtml(p.name) + '" checked>'
             + '<div style="flex:1;min-width:0;margin-left:8px">'
             + '<div style="font-size:0.88rem;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(p.name) + '</div>'
+            + '<div style="font-size:0.72rem;color:#6e7681;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+            + (p.install_location ? escapeHtml(p.install_location) : '')
+            + '</div>'
             + '<div style="font-size:0.75rem;color:#8b949e">'
             + (p.publisher ? escapeHtml(p.publisher) + ' · ' : '')
             + (p.version ? escapeHtml(p.version) + ' · ' : '')
             + (p.install_date || '')
             + '</div></div>'
-            + '<span style="font-size:0.82rem;color:#8b949e;white-space:nowrap;padding-left:8px">' + (p.size_fmt || '') + '</span>'
+            + '<div style="text-align:right;flex-shrink:0;padding-left:8px">'
+            + (p.last_used ? '<div style="font-size:0.72rem;color:#8b949e;white-space:nowrap">' + _t('software.last_used') + ' ' + escapeHtml(p.last_used) + '</div>' : '')
+            + '<div style="font-size:0.82rem;color:#8b949e;white-space:nowrap">' + (p.size_fmt || '') + '</div>'
+            + '</div>'
             + '</div>';
     });
     document.getElementById('software-list').innerHTML = html || '<div style="padding:16px;text-align:center;color:#8b949e">' + _t('software.empty') + '</div>';

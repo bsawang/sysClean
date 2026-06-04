@@ -593,11 +593,23 @@ def _read_registered_programs():
                         except (OSError, ValueError):
                             return 0
 
+                    install_path = _read_str(sub_key, "InstallLocation")
+                    last_used = ""
+                    if install_path and os.path.isdir(install_path):
+                        try:
+                            mtime = os.path.getmtime(install_path)
+                            from datetime import datetime
+                            last_used = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d")
+                        except Exception:
+                            pass
+
                     programs.append({
                         "name": name,
                         "version": _read_str(sub_key, "DisplayVersion"),
                         "publisher": _read_str(sub_key, "Publisher"),
                         "install_date": _read_str(sub_key, "InstallDate"),
+                        "install_location": install_path,
+                        "last_used": last_used,
                         "estimated_size": _read_int(sub_key, "EstimatedSize") * 1024,  # KB → bytes
                         "uninstall_string": _read_str(sub_key, "UninstallString"),
                         "source": "registry",

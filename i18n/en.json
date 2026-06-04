@@ -117,5 +117,6 @@
   "software.uninstalling": "Uninstalling",
   "software.uninstall_log": "Uninstall Log",
   "software.sort_date": "Install Date",
-  "software.sort_size": "Size"
+  "software.sort_size": "Size",
+  "software.last_used": "Used"
 }
