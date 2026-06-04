@@ -237,8 +237,10 @@
           C:\ProgramData\Microsoft\Search\Data\Applications\Windows\Windows.edb
         </div>
         <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px">
-          <span id="search-status" style="font-size:0.78rem;color:#8b949e">-</span>
-          <button class="btn btn-ghost btn-sm btn-operation" onclick="rebuildSearchIndex()" style="font-size:0.82rem;padding:4px 14px" id="btn-rebuild-index">
+          <button class="btn btn-primary btn-sm btn-operation" onclick="toggleSearchService()" style="font-size:0.82rem;padding:4px 14px" id="btn-search-toggle">
+            <span id="search-toggle-text" data-i18n="search.stop">停止</span>
+          </button>
+          <button class="btn btn-danger btn-sm btn-operation" onclick="rebuildSearchIndex()" style="font-size:0.82rem;padding:4px 14px" id="btn-rebuild-index">
             <span data-i18n="search.rebuild">重建</span>
           </button>
         </div>
@@ -708,20 +710,49 @@ function refreshCompleteHints() {
 // ====================================================================
 // Search Index
 // ====================================================================
+var searchServiceRunning = false;
+
 function refreshSearchStatus() {
     fetch('/api/search/status')
         .then(function(r) { return r.json(); })
         .then(function(d) {
             document.getElementById('search-size').textContent = d.size_fmt;
-            var statusEl = document.getElementById('search-status');
+            searchServiceRunning = d.service_running === true && !d.rebuilding;
+            var toggleBtn = document.getElementById('btn-search-toggle');
+            toggleBtn.disabled = d.rebuilding;
             if (d.rebuilding) {
-                statusEl.textContent = _t('search.rebuilding');
-            } else if (d.service_running === false) {
-                statusEl.textContent = _t('search.stopped');
+                toggleBtn.className = 'btn btn-sm btn-operation disabled';
+                document.getElementById('search-toggle-text').textContent = _t('search.rebuilding');
+            } else if (d.service_running) {
+                toggleBtn.className = 'btn btn-primary btn-sm btn-operation';
+                document.getElementById('search-toggle-text').textContent = _t('search.stop');
             } else {
-                statusEl.textContent = _t('search.ready');
+                toggleBtn.className = 'btn btn-success btn-sm btn-operation';
+                document.getElementById('search-toggle-text').textContent = _t('search.start');
             }
         });
+}
+
+function toggleSearchService() {
+    if (isBusy) { alert(busyMsg()); return; }
+    startBusyPolling();
+    var toggleBtn = document.getElementById('btn-search-toggle');
+    toggleBtn.disabled = true;
+    fetch('/api/search/toggle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enable: !searchServiceRunning })
+    })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.status === 'ok') {
+                refreshSearchStatus();
+            } else {
+                alert(d.error || 'Failed');
+                toggleBtn.disabled = false;
+            }
+        })
+        .catch(function() { alert('Failed'); toggleBtn.disabled = false; });
 }
 
 function rebuildSearchIndex() {
@@ -734,7 +765,7 @@ function rebuildSearchIndex() {
         .then(function(r) { return r.json(); })
         .then(function(d) {
             if (d.status === 'rebuilding') {
-                document.getElementById('search-status').textContent = _t('search.rebuilding');
+                refreshSearchStatus();
             } else {
                 alert(d.error || 'Failed');
                 btn.disabled = false;

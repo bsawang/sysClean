@@ -249,7 +249,8 @@ a:hover { text-decoration: underline; }
   user-select: none;
 }
 
-.btn:disabled {
+.btn:disabled,
+.btn.disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -269,6 +270,14 @@ a:hover { text-decoration: underline; }
 }
 
 .btn-danger:hover:not(:disabled) { background: #da3633; }
+
+.btn-success {
+  background: #238636;
+  color: #fff;
+  border-color: rgba(240, 246, 252, 0.08);
+}
+
+.btn-success:hover:not(:disabled) { background: #2ea043; }
 
 .btn-ghost {
   background: transparent;

@@ -489,6 +489,40 @@ def api_search_rebuild():
     return jsonify({"status": "rebuilding"})
 
 
+@app.route("/api/search/toggle", methods=["POST"])
+def api_search_toggle():
+    """Toggle WSearch service on/off without deleting index.
+
+    Requires admin privileges. Guarded by global operation lock.
+    """
+    if not is_admin():
+        return jsonify({"error": "需要管理员权限才能控制服务"}), 403
+
+    data = request.get_json(force=True)
+    enable = data.get("enable", False)
+
+    if not acquire_operation("rebuilding_index"):
+        return jsonify({"error": "另一个操作正在进行中"}), 409
+
+    try:
+        import subprocess
+        action = "start" if enable else "stop"
+        args = ["net", action, WSEARCH_SERVICE_NAME]
+        if action == "stop":
+            args.append("/y")
+        r = subprocess.run(args, capture_output=True, text=True, timeout=30)
+        if r.returncode == 0:
+            return jsonify({"status": "ok", "running": enable})
+        else:
+            return jsonify({"error": f"服务{action}失败: {r.stderr.strip()}"}), 500
+    except subprocess.TimeoutExpired:
+        return jsonify({"error": "服务控制超时"}), 500
+    except Exception as exc:
+        return jsonify({"error": str(exc)}), 500
+    finally:
+        release_operation()
+
+
 # ---------------------------------------------------------------------------
 # Software Uninstall API
 # ---------------------------------------------------------------------------
