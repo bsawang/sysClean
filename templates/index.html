@@ -1568,10 +1568,10 @@ function renderSoftwareList(programs) {
         + (iconSrc ? '<img src="' + iconSrc + '" style="width:22px;height:22px;border-radius:4px" onerror="this.style.display=\'none\';this.parentNode.querySelector(\'.soft-icon\').classList.add(\'show\')" alt="">' : '')
         + '<span class="soft-icon" data-name="' + escapeHtml(p.name) + '"></span>'
         + '</span>';
-    html += '<div class="result-item soft-item" style="border-bottom:1px solid #21262d" onclick="toggleSoftwareCb(this)" data-checked="0">'
-            + '<input type="checkbox" class="software-cb" data-name="' + escapeHtml(p.name) + '">'
+    html += '<div class="result-item soft-item" style="border-bottom:1px solid #21262d;gap:10px" onclick="toggleSoftwareCb(this)" data-checked="0">'
+            + '<input type="checkbox" class="software-cb" data-name="' + escapeHtml(p.name) + '" style="margin:0">'
             + iconHtml
-            + '<div style="flex:1;min-width:0;margin-left:6px">'
+            + '<div style="flex:1;min-width:0">'
             + '<div style="display:flex;align-items:baseline;gap:8px">'
             + '<div style="flex:1;font-size:0.92rem;font-weight:600;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
             + escapeHtml(p.name)
