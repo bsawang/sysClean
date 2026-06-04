@@ -437,17 +437,7 @@ function riskTag(risk) {
 // ====================================================================
 // HTMX: intercept JSON from /api/disk and render as HTML
 // ====================================================================
-document.body.addEventListener('htmx:beforeSwap', function(evt) {
-  if (evt.detail.target && evt.detail.target.id === 'disk-card') {
-    var ct = evt.detail.xhr.getResponseHeader('Content-Type') || '';
-    if (ct.indexOf('json') !== -1) {
-      try {
-        var data = JSON.parse(evt.detail.serverResponse);
-        evt.detail.serverResponse = renderDiskCardHtml(data);
-      } catch (e) {}
-    }
-  }
-});
+
 
 // Re-apply translations after HTMX swaps content
 document.body.addEventListener('htmx:afterSwap', function(evt) {
@@ -936,7 +926,7 @@ function showComplete(data) {
       // fallback: just use after as baseline
       renderDiskCompare(diskAfter, diskAfter);
     }
-  }).catch(function() {});
+  }).catch(function(e) { console.error('refreshDiskCard:', e); });
 }
 
 function renderDiskCompare(before, after) {
@@ -1058,7 +1048,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Fetch initial disk info for before state
   fetch('/api/disk').then(function(r) { return r.json(); }).then(function(data) {
     diskBefore = data;
-  }).catch(function() {});
+  }).catch(function(e) { console.error('refreshDiskCard:', e); });
 
   // Check if sandbox is active
   checkSandbox();
