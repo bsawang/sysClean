@@ -735,7 +735,7 @@ a:hover { text-decoration: underline; }
   transition: border-color 0.15s;
 }
 .op-card:hover { border-color: #30363d; }
-.op-card-header { display: flex; align-items: center; gap: 6px; }
+.op-card-header { display: flex; align-items: center; gap: 6px; padding-bottom: 8px; border-bottom: 1px solid #21262d; }
 .op-card-header svg { width: 16px; height: 16px; flex-shrink: 0; color: #8b949e; }
 .op-card-label { flex: 1; font-size: 0.82rem; font-weight: 500; color: #c9d1d9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .op-card-value { font-size: 0.78rem; color: #d29922; flex-shrink: 0; }
