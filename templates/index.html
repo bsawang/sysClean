@@ -506,7 +506,10 @@
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0">
           <h2 style="font-size:1.1rem;font-weight:600;color:#c9d1d9">
             <span data-i18n="software.title">Software Manager</span>
-            <span id="software-total" style="color:#8b949e;font-size:0.9rem;font-weight:400;margin-left:8px">0 programs</span>
+            <span style="color:#8b949e;font-size:0.9rem;font-weight:400;margin-left:8px">
+              <span id="software-count-header">0</span>
+              <span data-i18n="results.items">programs</span>
+            </span>
           </h2>
           <button class="btn btn-ghost btn-sm" onclick="showView('empty')" data-i18n="btn.back_home">← Back</button>
         </div>
@@ -677,6 +680,53 @@ function refreshRecycleStatus() {
         .then(function(d) {
             document.getElementById('recycle-size').textContent = d.size_fmt;
         });
+}
+
+// ====================================================================
+// Web alert dialog (replaces browser alert)
+// ====================================================================
+function webAlert(msg, title) {
+    return new Promise(function(resolve) {
+        var overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6)';
+        var box = document.createElement('div');
+        box.className = 'modal-box';
+        box.style.cssText = 'max-width:420px;width:90%;padding:20px';
+        if (title) {
+            var h = document.createElement('div');
+            h.style.cssText = 'font-size:1rem;font-weight:600;color:#c9d1d9;margin-bottom:12px';
+            h.textContent = title;
+            box.appendChild(h);
+        }
+        var msgEl = document.createElement('div');
+        msgEl.style.cssText = 'font-size:0.88rem;color:#8b949e;margin-bottom:20px;line-height:1.6;white-space:pre-wrap';
+        msgEl.textContent = msg;
+        box.appendChild(msgEl);
+        var actions = document.createElement('div');
+        actions.style.cssText = 'display:flex;gap:8px;justify-content:flex-end';
+        var okBtn = document.createElement('button');
+        okBtn.className = 'btn btn-primary btn-sm';
+        okBtn.textContent = _t('btn.ok');
+        actions.appendChild(okBtn);
+        box.appendChild(actions);
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        function close() {
+            document.body.removeChild(overlay);
+            resolve();
+        }
+        okBtn.onclick = close;
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) close(); });
+        var keyHandler = function(e) {
+            if (e.key === 'Escape' || e.key === 'Enter') { close(); }
+        };
+        document.addEventListener('keydown', keyHandler);
+        var origClose = close;
+        close = function() { document.removeEventListener('keydown', keyHandler); origClose(); };
+        okBtn.focus();
+    });
 }
 
 // ====================================================================
@@ -1577,7 +1627,7 @@ function showSoftwareView() {
         .then(function(d) {
             allPrograms = d.programs || [];
             document.getElementById('software-loading').style.display = 'none';
-            document.getElementById('software-total').textContent = allPrograms.length + ' ' + _t('results.items');
+            document.getElementById('software-count-header').textContent = allPrograms.length;
             document.getElementById('software-count').textContent = allPrograms.length;
 
             var adminWarn = document.getElementById('software-admin-warn');
@@ -1760,7 +1810,7 @@ async function startUninstall() {
         selected.push(cb.getAttribute('data-name'));
     });
     if (selected.length === 0) {
-        alert(_t('software.select_none'));
+        webAlert(_t('software.select_none'));
         return;
     }
 

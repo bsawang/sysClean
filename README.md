@@ -31,7 +31,7 @@ claude skills add https://github.com/bsawang/sysclean
 3. 用户直接在 Web 界面中操作（选择分类 → 扫描 → 查看 → 清理）
 4. AI 解释风险等级和操作流程，但绝不自动删除文件
 
-> **提示：** 在 URL 后添加 `?lang=en` 或 `?lang=zh` 可随时切换中英文界面。
+> **提示：** 在 URL 后添加 `?lang=en` 或 `?lang=zh` 可随时切换中英文界面。也可以在界面右上角的下拉菜单中直接切换。
 
 #### 操作流程
 
@@ -51,6 +51,7 @@ claude skills add https://github.com/bsawang/sysclean
 - **不会自动删除** — 所有清理操作都需要用户在浏览器中确认
 - 每项文件都有**风险标签**（安全 / 注意 / 高风险）并附有说明
 - 默认情况下文件会进入**回收站**（Windows）
+- 使用**自定义 Web 弹窗**（非原生 `alert/confirm`），统一界面风格且支持双语
 
 ### 其他环境使用
 
@@ -68,6 +69,7 @@ python app.py
 ### 界面语言
 
 URL 后添加 `?lang=en` 切换英文，`?lang=zh` 切换中文。默认为中文。
+也可通过界面右上角的下拉菜单**实时切换**，无需刷新页面。
 
 ---
 
@@ -96,7 +98,7 @@ When the AI is invoked with a cleanup request, it:
 3. The user interacts with the Web UI directly (select categories → scan → review → clean)
 4. The AI explains risk levels and flow, but never deletes files automatically
 
-> **Tip:** Append `?lang=en` or `?lang=zh` to the URL to switch between English and Chinese UI at any time.
+> **Tip:** Append `?lang=en` or `?lang=zh` to the URL to switch between English and Chinese UI at any time. You can also toggle the language via the dropdown in the top-right corner.
 
 #### Workflow
 
@@ -116,6 +118,7 @@ When the AI is invoked with a cleanup request, it:
 - **No automatic deletion** — all clean operations require user confirmation in the browser
 - Every item has a **risk label** (Safe / Caution / High Risk) with explanation
 - Files go to **Recycle Bin** by default (Windows)
+- **Custom Web modals** replace native `alert/confirm` for a consistent bilingual UI
 
 ### Usage in Other Environments
 
@@ -132,7 +135,7 @@ No AI platform required — any human user can operate it directly via the Web U
 
 ### Language
 
-Add `?lang=en` to the URL for English UI, or `?lang=zh` for Chinese. Default is Chinese.
+Add `?lang=en` to the URL for English UI, or `?lang=zh` for Chinese (default). You can also **switch in real time** via the dropdown in the top-right corner — no page refresh needed.
 
 ---
 
