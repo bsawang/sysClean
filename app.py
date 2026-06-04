@@ -8,6 +8,7 @@ and process listing with i18n support.
 
 import json
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -655,20 +656,118 @@ def _read_registered_programs():
     return programs
 
 
+def _build_steam_lookup() -> dict[str, str]:
+    """Build a mapping from game display names to install paths via Steam manifests.
+
+    Reads Steam libraryfolders.vdf and appmanifest_*.acf files to find
+    where each game is installed. Returns dict like {'Watch Dogs 2': 'D:\\Steam\\...'}.
+    """
+    lookup = {}
+
+    # Find Steam root from registry
+    try:
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            r"Software\Valve\Steam",
+            0, winreg.KEY_READ,
+        )
+        steam_path = winreg.QueryValueEx(key, "SteamPath")[0]
+        winreg.CloseKey(key)
+    except Exception:
+        return lookup
+
+    steam_path = Path(steam_path)
+    if not steam_path.exists():
+        return lookup
+
+    # Parse libraryfolders.vdf for all library paths
+    library_folders = [steam_path / "steamapps"]
+    vdf_path = steam_path / "steamapps" / "libraryfolders.vdf"
+    if vdf_path.exists():
+        try:
+            text = vdf_path.read_text(encoding="utf-8")
+            for m in re.finditer(r'"path"\s+"([^"]+)"', text):
+                p = Path(m.group(1)) / "steamapps"
+                if p.exists() and p not in library_folders:
+                    library_folders.append(p)
+        except Exception:
+            pass
+
+    # Parse all appmanifest_*.acf files
+    for lib in library_folders:
+        if not lib.exists():
+            continue
+        for mf in lib.glob("appmanifest_*.acf"):
+            try:
+                text = mf.read_text(encoding="utf-8")
+                name_m = re.search(r'"name"\s+"([^"]+)"', text)
+                installdir_m = re.search(r'"installdir"\s+"([^"]+)"', text)
+                if name_m and installdir_m:
+                    game_name = name_m.group(1)
+                    install_dir = str(lib.parent / "common" / installdir_m.group(1))
+                    if os.path.isdir(install_dir):
+                        lookup[game_name] = install_dir
+            except Exception:
+                continue
+
+    # Pre-populate known AppID lookups for Chinese-named games
+    # Watch Dogs 2 (AppID 447040)
+    watch_dogs_path = _find_steam_game_path(447040, library_folders)
+    if watch_dogs_path:
+        lookup["看门狗2"] = watch_dogs_path
+
+    return lookup
+
+
+def _find_steam_game_path(app_id: int, library_folders: list[Path]) -> str:
+    """Find install path for a Steam game by AppID."""
+    for lib in library_folders:
+        mf = lib / f"appmanifest_{app_id}.acf"
+        if mf.exists():
+            try:
+                text = mf.read_text(encoding="utf-8")
+                m = re.search(r'"installdir"\s+"([^"]+)"', text)
+                if m:
+                    p = str(lib.parent / "common" / m.group(1))
+                    if os.path.isdir(p):
+                        return p
+            except Exception:
+                pass
+    return ""
+
+
 @app.route("/api/uninstall/list")
 def api_uninstall_list():
     """Return a list of installed programs."""
     programs = _read_registered_programs()
-    programs.sort(key=lambda p: p["name"].lower())
+
+    # Steam game path fallback for programs missing install_location
+    steam_lookup = _build_steam_lookup()
 
     for p in programs:
+        if not p.get("install_location") and p["name"] in steam_lookup:
+            p["install_location"] = steam_lookup[p["name"]]
+            p["last_used"] = _get_dir_mtime(p["install_location"])
         p["size_fmt"] = _format_size(p["estimated_size"]) if p["estimated_size"] > 0 else ""
+
+    programs.sort(key=lambda p: p["name"].lower())
 
     return jsonify({
         "programs": programs,
         "total": len(programs),
         "admin": is_admin(),
     })
+
+
+def _get_dir_mtime(path: str) -> str:
+    """Get directory last modified time as YYYY-MM-DD string."""
+    try:
+        from datetime import datetime
+        if path and os.path.isdir(path):
+            return datetime.fromtimestamp(os.path.getmtime(path)).strftime("%Y-%m-%d")
+    except Exception:
+        pass
+    return ""
 
 
 @app.route("/api/uninstall/start", methods=["POST"])
