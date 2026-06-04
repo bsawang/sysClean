@@ -233,9 +233,7 @@
           <span class="op-card-label" data-i18n="search.title">Search Index</span>
           <span id="search-size" style="font-size:1.05rem;font-weight:600;color:#d29922">-</span>
         </div>
-        <div style="font-size:0.68rem;color:#6e7681;margin-top:6px;word-break:break-all;line-height:1.35;font-family:monospace">
-          C:\ProgramData\Microsoft\Search\Data\Applications\Windows\Windows.edb
-        </div>
+        <div id="search-path" style="font-size:0.68rem;color:#6e7681;margin-top:6px;word-break:break-all;line-height:1.35;font-family:monospace"></div>
         <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px">
           <button class="btn btn-primary btn-sm btn-operation" onclick="toggleSearchService()" style="font-size:0.82rem;padding:4px 14px" id="btn-search-toggle">
             <span id="search-toggle-text" data-i18n="search.stop">停止</span>
@@ -717,6 +715,7 @@ function refreshSearchStatus() {
         .then(function(r) { return r.json(); })
         .then(function(d) {
             document.getElementById('search-size').textContent = d.size_fmt;
+            document.getElementById('search-path').textContent = d.real_path || '';
             searchServiceRunning = d.service_running === true && !d.rebuilding;
             var toggleBtn = document.getElementById('btn-search-toggle');
             toggleBtn.disabled = d.rebuilding;

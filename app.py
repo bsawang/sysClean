@@ -393,6 +393,14 @@ SEARCH_INDEX_PATH = Path(
 WSEARCH_SERVICE_NAME = "WSearch"
 
 
+def _get_real_search_index_path() -> str:
+    """Resolve junctions/symlinks to get the real index file path."""
+    try:
+        return os.path.realpath(str(SEARCH_INDEX_PATH))
+    except Exception:
+        return str(SEARCH_INDEX_PATH)
+
+
 def _get_search_index_size() -> int:
     """Return size of Windows.edb in bytes, or 0 if not accessible."""
     try:
@@ -424,11 +432,13 @@ def api_search_status():
     size = _get_search_index_size()
     running = _is_search_service_running()
     state = get_operation_state()
+    real_path = _get_real_search_index_path()
     return jsonify({
         "size": size,
         "size_fmt": _format_size(size),
         "service_running": running,
         "rebuilding": state == "rebuilding_index",
+        "real_path": real_path,
     })
 
 
