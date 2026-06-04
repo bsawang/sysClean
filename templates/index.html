@@ -72,12 +72,8 @@
     <!-- ============================================================ -->
     <aside class="sidebar">
 
-      <!-- Disk status card (loaded via HTMX) -->
-      <div id="disk-card"
-           hx-get="/api/disk"
-           hx-trigger="load"
-           hx-swap="innerHTML"
-           hx-vals='js:{lang: (new URLSearchParams(window.location.search)).get("lang")||"zh"}'>
+      <!-- Disk status card (loaded via JS) -->
+      <div id="disk-card">
         <div class="disk-card-loading" data-i18n="disk.loading">Loading...</div>
       </div>
 
