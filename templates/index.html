@@ -1569,7 +1569,7 @@ function renderSoftwareList(programs) {
         + '<span class="soft-icon" data-name="' + escapeHtml(p.name) + '"></span>'
         + '</span>';
     html += '<div class="result-item soft-item" style="border-bottom:1px solid #21262d;gap:10px" onclick="toggleSoftwareCb(this)" data-checked="0">'
-            + '<input type="checkbox" class="software-cb" data-name="' + escapeHtml(p.name) + '" style="margin:0">'
+            + '<input type="checkbox" class="software-cb" data-name="' + escapeHtml(p.name) + '" style="margin:0;pointer-events:none">'
             + iconHtml
             + '<div style="flex:1;min-width:0">'
             + '<div style="display:flex;align-items:baseline;gap:8px">'
