@@ -226,6 +226,7 @@ sysclean/
 │   ├── style.css         # 样式 (Github Dark)
 │   ├── htmx.min.js       # HTMX 本地兜底
 │   └── sse.js            # HTMX SSE 扩展本地兜底
+├── README.md             # 通用说明 (任何 AI agent / 人类可用)
 ├── requirements.txt      # flask, psutil
 ├── sysclean.md           # Claude Code Skill 指令文件
 ├── logs/                 # 运行时创建，清理日志
