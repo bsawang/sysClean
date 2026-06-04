@@ -914,7 +914,7 @@ async function executeClean() {
               document.getElementById('clean-progress-pct').textContent = pct + '%';
               document.getElementById('clean-freed').textContent = formatSize(event.freed_so_far);
               document.getElementById('clean-completed').textContent = event.completed + ' / ' + event.total;
-              var prevFreed = cleanedItems.length ? cleanedItems[cleanedItems.length-1].cumulative : 0; cleanedItems.push({ path: event.path, success: event.success, size: event.freed_so_far - prevFreed, cumulative: event.freed_so_far });;
+              cleanedItems.push({ path: event.path, success: event.success, size: event.file_size || 0 });;
 
               // Add to live feed
               var feed = document.getElementById('clean-feed');
@@ -927,7 +927,7 @@ async function executeClean() {
               row.innerHTML = '<span class="icon ' + statusCls + '">'
                 + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + iconPath + '</svg></span>'
                 + '<span class="mono" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(event.path) + '</span>'
-                + '<span style="color:#8b949e;font-size:0.8rem">' + formatSize(event.freed_so_far || 0) + '</span>';
+                + '<span style="color:#8b949e;font-size:0.8rem">' + formatSize(event.file_size || 0) + '</span>';
               feed.appendChild(row);
               feed.scrollTop = feed.scrollHeight;
             }

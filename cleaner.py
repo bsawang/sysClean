@@ -262,6 +262,7 @@ class CleanExecutor:
                 "total": total,
                 "path": path,
                 "success": success,
+                "file_size": file_size if success else 0,
                 "freed_so_far": total_freed,
                 "reason": fail_reason if not success else "",
             }
