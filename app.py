@@ -57,7 +57,7 @@ def release_operation():
 
 
 def get_operation_state() -> Optional[str]:
-    """Return current operation state without acquiring the lock."""
+    """Return current operation state (thread-safe)."""
     global _operation_state
     with _operation_lock:
         return _operation_state
@@ -192,7 +192,13 @@ def api_scan_start():
             release_operation()
 
     t = threading.Thread(target=_run_scan, daemon=True)
-    t.start()
+    try:
+        t.start()
+    except:
+        release_operation()
+        with scan_lock:
+            scan_in_progress = False
+        raise
     return jsonify({"status": "started"})
 
 
@@ -222,20 +228,28 @@ def api_scan_results():
 @app.route("/api/clean/start", methods=["POST"])
 def api_clean_start():
     """Start cleaning selected items and stream progress via SSE."""
+    if not acquire_operation("cleaning"):
+        return jsonify({"error": "另一个操作正在进行中"}), 409
+
     data = request.get_json(force=True)
     ids = data.get("ids")
 
     if not ids or not isinstance(ids, list):
+        release_operation()
         return jsonify({"error": "ids must be a non-empty list"}), 400
 
     selected = [item for item in scan_results if item.id in ids]
     if not selected:
+        release_operation()
         return jsonify({"error": "no matching items found for the given ids"}), 400
 
     def generate():
         executor = CleanExecutor()
-        for event in executor.clean_items(selected):
-            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+        try:
+            for event in executor.clean_items(selected):
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+        finally:
+            release_operation()
 
     return Response(generate(), mimetype="text/event-stream")
 
