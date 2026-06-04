@@ -169,7 +169,7 @@ class CleanExecutor:
             freed = self._walk_size(path)
         else:
             self.logger.warning("Path does not exist: %s", path)
-            return False, 0
+            return False, 0, "Path does not exist"
 
         # Priority 1: Recycle Bin
         if self._move_to_recycle_bin(path):
@@ -192,10 +192,11 @@ class CleanExecutor:
                     path,
                     self._format_size(freed),
                 )
-            return True, freed
+            return True, freed, ""
         except (OSError, PermissionError) as exc:
-            self.logger.error("Failed to delete %s: %s", path, exc)
-            return False, 0
+            reason = str(exc)
+            self.logger.error("Failed to delete %s: %s", path, reason)
+            return False, 0, reason
 
     def clean_items(self, items):
         """Iterate over items to clean, yielding SSE-friendly progress dicts.
@@ -209,24 +210,51 @@ class CleanExecutor:
             - ``clean_progress`` after each item is processed.
             - ``clean_complete`` when all items have been processed.
         """
-        # Materialise so total is known upfront
-        item_list = list(items)
-        total = len(item_list)
+        # Expand directories into individual file items
+        expanded = []
+        for item in list(items):
+            item_path = item["path"] if isinstance(item, dict) else item.path
+            if os.path.isdir(item_path):
+                for root, dirs, files in os.walk(item_path):
+                    for f in files:
+                        fp = os.path.join(root, f)
+                        try:
+                            sz = os.path.getsize(fp)
+                        except OSError:
+                            sz = 0
+                        expanded.append((fp, sz))
+            elif os.path.isfile(item_path):
+                try:
+                    sz = os.path.getsize(item_path)
+                except OSError:
+                    sz = 0
+                expanded.append((item_path, sz))
+
+        total = len(expanded)
         completed = 0
         failed_count = 0
         total_freed = 0
 
-        for item in item_list:
-            success, freed = self.delete_item(item)
+        for file_path, file_size in expanded:
+            path = file_path
+            freed = file_size if os.path.exists(file_path) else 0
+            try:
+                if self._move_to_recycle_bin(path):
+                    success = True
+                    fail_reason = ""
+                else:
+                    os.remove(path)
+                    success = True
+                    fail_reason = ""
+            except (OSError, PermissionError) as exc:
+                success = False
+                freed = 0
+                fail_reason = str(exc)
+
             completed += 1
             total_freed += freed
             if not success:
                 failed_count += 1
-
-            if isinstance(item, dict):
-                path = item["path"]
-            else:
-                path = item.path
 
             yield {
                 "type": "clean_progress",
@@ -235,6 +263,7 @@ class CleanExecutor:
                 "path": path,
                 "success": success,
                 "freed_so_far": total_freed,
+                "reason": fail_reason if not success else "",
             }
 
         yield {
