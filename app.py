@@ -9,6 +9,7 @@ and process listing with i18n support.
 import json
 import os
 import threading
+from pathlib import Path
 
 import ctypes
 import psutil
@@ -378,6 +379,112 @@ def api_recycle_empty():
             return jsonify({"error": f"清空回收站失败 (code {result})"}), 500
     finally:
         release_operation()
+
+
+# ---------------------------------------------------------------------------
+# Windows Search Index API
+# ---------------------------------------------------------------------------
+
+SEARCH_INDEX_PATH = Path(
+    "C:\\ProgramData\\Microsoft\\Search\\Data\\Applications\\Windows\\Windows.edb"
+)
+WSEARCH_SERVICE_NAME = "WSearch"
+
+
+def _get_search_index_size() -> int:
+    """Return size of Windows.edb in bytes, or 0 if not accessible."""
+    try:
+        return SEARCH_INDEX_PATH.stat().st_size if SEARCH_INDEX_PATH.exists() else 0
+    except OSError:
+        return 0
+
+
+def _is_search_service_running() -> Optional[bool]:
+    """Check if WSearch service is running.
+
+    Returns:
+        True if running, False if stopped, None if status unknown.
+    """
+    try:
+        import subprocess
+        r = subprocess.run(
+            ["sc", "query", WSEARCH_SERVICE_NAME],
+            capture_output=True, text=True, timeout=10,
+        )
+        return "RUNNING" in r.stdout
+    except Exception:
+        return None
+
+
+@app.route("/api/search/status")
+def api_search_status():
+    """Return Search Index status: size, service state, rebuilding flag."""
+    size = _get_search_index_size()
+    running = _is_search_service_running()
+    state = get_operation_state()
+    return jsonify({
+        "size": size,
+        "size_fmt": _format_size(size),
+        "service_running": running,
+        "rebuilding": state == "rebuilding_index",
+    })
+
+
+@app.route("/api/search/rebuild", methods=["POST"])
+def api_search_rebuild():
+    """Rebuild Windows Search index: stop service → delete db → start service.
+
+    Guarded by global operation lock. Requires admin privileges.
+    """
+    if not is_admin():
+        return jsonify({"error": "需要管理员权限才能重建搜索索引"}), 403
+
+    if not acquire_operation("rebuilding_index"):
+        return jsonify({"error": "另一个操作正在进行中"}), 409
+
+    def _rebuild():
+        import subprocess
+        import time
+        try:
+            # Step 1: Stop WSearch service
+            subprocess.run(
+                ["net", "stop", WSEARCH_SERVICE_NAME, "/y"],
+                capture_output=True, text=True, timeout=30,
+            )
+            time.sleep(1)
+
+            # Step 2: Delete the index database
+            if SEARCH_INDEX_PATH.exists():
+                try:
+                    SEARCH_INDEX_PATH.unlink()
+                except OSError:
+                    pass
+
+            # Step 3: Delete log files in the same directory
+            index_dir = SEARCH_INDEX_PATH.parent
+            if index_dir.exists():
+                for f in index_dir.iterdir():
+                    if f.name.endswith(".log") or f.name.endswith(".jrs"):
+                        try:
+                            f.unlink()
+                        except OSError:
+                            pass
+
+            # Step 4: Restart service
+            subprocess.run(
+                ["net", "start", WSEARCH_SERVICE_NAME],
+                capture_output=True, text=True, timeout=30,
+            )
+        except subprocess.TimeoutExpired:
+            pass
+        except Exception as exc:
+            print(f"Search index rebuild failed: {exc}")
+        finally:
+            release_operation()
+
+    t = threading.Thread(target=_rebuild, daemon=True)
+    t.start()
+    return jsonify({"status": "rebuilding"})
 
 
 # ---------------------------------------------------------------------------
