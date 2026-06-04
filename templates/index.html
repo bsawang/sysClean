@@ -234,10 +234,12 @@
           <span id="search-size" style="font-size:1.05rem;font-weight:600;color:#d29922">-</span>
         </div>
         <div id="search-path" style="font-size:0.78rem;color:#8b949e;margin-top:6px;word-break:break-all;line-height:1.4;font-family:monospace"></div>
-        <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:6px">
-          <button class="btn btn-primary btn-sm btn-operation" onclick="toggleSearchService()" style="font-size:0.82rem;padding:4px 14px" id="btn-search-toggle">
-            <span id="search-toggle-text" data-i18n="search.stop">停止</span>
-          </button>
+        <div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:6px">
+          <label class="sandbox-toggle" title="Toggle WSearch service">
+            <input type="checkbox" id="search-service-toggle" onchange="toggleSearchService(this.checked)">
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            <span class="toggle-label" id="search-toggle-label" data-i18n="search.stop">停止</span>
+          </label>
           <button class="btn btn-danger btn-sm btn-operation" onclick="rebuildSearchIndex()" style="font-size:0.82rem;padding:4px 14px" id="btn-rebuild-index">
             <span data-i18n="search.rebuild">重建</span>
           </button>
@@ -717,30 +719,30 @@ function refreshSearchStatus() {
             document.getElementById('search-size').textContent = d.size_fmt;
             document.getElementById('search-path').textContent = d.real_path || '';
             searchServiceRunning = d.service_running === true && !d.rebuilding;
-            var toggleBtn = document.getElementById('btn-search-toggle');
-            toggleBtn.disabled = d.rebuilding;
+            var toggle = document.getElementById('search-service-toggle');
+            var label = document.getElementById('search-toggle-label');
+            toggle.disabled = d.rebuilding;
             if (d.rebuilding) {
-                toggleBtn.className = 'btn btn-sm btn-operation disabled';
-                document.getElementById('search-toggle-text').textContent = _t('search.rebuilding');
+                label.textContent = _t('search.rebuilding');
             } else if (d.service_running) {
-                toggleBtn.className = 'btn btn-primary btn-sm btn-operation';
-                document.getElementById('search-toggle-text').textContent = _t('search.stop');
+                toggle.checked = true;
+                label.textContent = _t('search.stop');
             } else {
-                toggleBtn.className = 'btn btn-success btn-sm btn-operation';
-                document.getElementById('search-toggle-text').textContent = _t('search.start');
+                toggle.checked = false;
+                label.textContent = _t('search.start');
             }
         });
 }
 
-function toggleSearchService() {
+function toggleSearchService(enable) {
     if (isBusy) { alert(busyMsg()); return; }
     startBusyPolling();
-    var toggleBtn = document.getElementById('btn-search-toggle');
-    toggleBtn.disabled = true;
+    var toggle = document.getElementById('search-service-toggle');
+    toggle.disabled = true;
     fetch('/api/search/toggle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enable: !searchServiceRunning })
+        body: JSON.stringify({ enable: enable })
     })
         .then(function(r) { return r.json(); })
         .then(function(d) {
@@ -748,10 +750,10 @@ function toggleSearchService() {
                 refreshSearchStatus();
             } else {
                 alert(d.error || 'Failed');
-                toggleBtn.disabled = false;
+                toggle.disabled = false;
             }
         })
-        .catch(function() { alert('Failed'); toggleBtn.disabled = false; });
+        .catch(function() { alert('Failed'); toggle.disabled = false; });
 }
 
 function rebuildSearchIndex() {
