@@ -233,7 +233,7 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
             </svg>
-            <span data-i18n="btn.clean_selected">Clean Selected</span>
+            <span data-i18n="btn.clean_selected">Clean Selected</span> <span id="clean-btn-size"></span>
           </button>
         </div>
       </div>
@@ -265,7 +265,7 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
               </svg>
-              <span data-i18n="btn.confirm">Confirm Cleanup</span>
+              <span data-i18n="btn.confirm">Confirm Cleanup</span> <span id="confirm-btn-size"></span>
             </button>
           </div>
         </div>
@@ -722,6 +722,23 @@ function toggleGroupCheckbox(groupCb) {
 function updateSelectedCount() {
   var total = document.querySelectorAll('.item-checkbox:checked').length;
   document.getElementById('results-selected').textContent = total + ' ' + _t('results.selected');
+  // Update clean button with total size
+  var totalBytes = 0;
+  document.querySelectorAll('.item-checkbox:checked').forEach(function(cb) {
+    var item = cb.closest('.result-item');
+    var sizeEl = item ? item.querySelector('.result-size') : null;
+    if (sizeEl) {
+      var txt = sizeEl.textContent.trim();
+      var m = txt.match(/^([\d.]+)\s*(B|KB|MB|GB|TB)$/);
+      if (m) {
+        var val = parseFloat(m[1]);
+        var u = {B:1, KB:1024, MB:1048576, GB:1073741824, TB:1099511627776};
+        totalBytes += val * (u[m[2]] || 1);
+      }
+    }
+  });
+  var btnSize = document.getElementById('clean-btn-size');
+  if (btnSize) btnSize.textContent = '(' + formatSize(totalBytes) + ')';
 }
 
 function selectAllItems(select) {
