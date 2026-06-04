@@ -347,10 +347,32 @@ a:hover { text-decoration: underline; }
   height: 10px;
   border-radius: 5px;
   transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .progress-fill.blue { background: linear-gradient(90deg, #58a6ff, #1f6feb); }
 .progress-fill.red { background: linear-gradient(90deg, #f85149, #da3633); }
+
+.progress-fill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 8px,
+    rgba(255,255,255,0.12) 8px,
+    rgba(255,255,255,0.12) 16px
+  );
+  background-size: 200% 100%;
+  animation: progress-stripe 1s linear infinite;
+}
+
+@keyframes progress-stripe {
+  from { background-position: 0 0; }
+  to { background-position: -32px 0; }
+}
 
 /* ----- Steps Indicator ----- */
 .steps {
