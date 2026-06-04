@@ -91,7 +91,7 @@
   "admin.limited": "Limited by user permissions",
   "operations.title": "Operations",
   "recycle.title": "Recycle Bin",
-  "recycle.empty": "Empty Recycle Bin",
+  "recycle.empty": "Empty",
   "recycle.confirm": "Are you sure you want to empty the Recycle Bin? This operation cannot be undone.",
   "complete.hints.title": "💡 Suggested Follow-up",
   "complete.hints.goto": "Go",
