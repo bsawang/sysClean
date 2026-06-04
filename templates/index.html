@@ -783,6 +783,8 @@ function confirmClean() {
         + '<div style="font-size:0.85rem;color:#d29922">' + _t('sandbox.no_clean') + '</div>'
         + '</div>';
       document.getElementById('confirm-summary').innerHTML = '';
+      document.getElementById('confirm-title').style.display = 'none';
+      document.getElementById('confirm-subtitle').style.display = 'none';
       document.getElementById('modal-warning-box').style.display = 'none';
       document.getElementById('confirm-actions').innerHTML =
         '<button class="btn btn-ghost" onclick="showView(\'results\')">' + _t('btn.cancel') + '</button>'
