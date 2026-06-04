@@ -9,7 +9,6 @@ and process listing with i18n support.
 import json
 import os
 import threading
-import time
 
 import psutil
 from flask import Flask, render_template, request, Response, jsonify, g
@@ -162,9 +161,7 @@ def api_scan_results():
 
 @app.route("/api/clean/start", methods=["POST"])
 def api_clean_start():
-    """Start cleaning selected items and stream progress via SSE.
-    In sandbox mode, simulate progress without deleting files."""
-    global sandbox_enabled
+    """Start cleaning selected items and stream progress via SSE."""
     data = request.get_json(force=True)
     ids = data.get("ids")
 
@@ -176,16 +173,9 @@ def api_clean_start():
         return jsonify({"error": "no matching items found for the given ids"}), 400
 
     def generate():
-        if sandbox_enabled:
-            total = len(selected)
-            for i, item in enumerate(selected, 1):
-                time.sleep(0.3)
-                yield f"data: {json.dumps({'type': 'clean_progress', 'completed': i, 'total': total, 'path': item.path, 'success': True, 'freed_so_far': item.size * i})}\n\n"
-            yield f"data: {json.dumps({'type': 'clean_complete', 'total_items': total, 'completed': total, 'failed_count': 0, 'total_freed': sum(it.size for it in selected)})}\n\n"
-        else:
-            executor = CleanExecutor()
-            for event in executor.clean_items(selected):
-                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+        executor = CleanExecutor()
+        for event in executor.clean_items(selected):
+            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
     return Response(generate(), mimetype="text/event-stream")
 

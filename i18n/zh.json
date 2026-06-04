@@ -69,5 +69,6 @@
   "sandbox.enter": "沙盒体验模式",
   "sandbox.exit": "退出沙盒模式",
   "sandbox.active": "沙盒模式已激活 — 真实扫描，模拟清理",
-  "sandbox.simulate": "沙盒模式 — 仅模拟流程，不会真实删除文件"
+  "sandbox.simulate": "沙盒模式 — 仅模拟流程，不会真实删除文件",
+  "sandbox.no_clean": "沙盒模式下无法执行清理，请退出沙盒模式后再试"
 }

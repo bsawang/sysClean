@@ -250,7 +250,7 @@
           <div id="confirm-count" style="font-size:0.9rem;color:#c9d1d9;margin-bottom:12px"></div>
           <div id="confirm-summary" style="margin-bottom:12px"></div>
 
-          <div style="background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.2);border-radius:6px;padding:10px 12px;font-size:0.82rem;color:#f85149;margin-bottom:4px">
+          <div id="modal-warning-box" style="background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.2);border-radius:6px;padding:10px 12px;font-size:0.82rem;color:#f85149;margin-bottom:4px">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px">
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
@@ -260,8 +260,8 @@
             🛡️ <span data-i18n="sandbox.simulate">沙盒模式 — 仅模拟流程，不会真实删除文件</span>
           </div>
 
-          <div class="modal-actions">
-            <button class="btn btn-ghost" onclick="showView('results')" data-i18n="btn.cancel">Cancel</button>
+          <div id="confirm-actions" class="modal-actions">
+            <button class="btn btn-ghost" onclick="showView('results')">Cancel</button>
             <button class="btn btn-danger" onclick="executeClean()">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -735,36 +735,53 @@ function confirmClean() {
   }
   selectedForClean = selected;
 
-  // Group by category for summary
-  var groups = {};
-  selected.forEach(function(item) {
-    if (!groups[item.category]) groups[item.category] = [];
-    groups[item.category].push(item);
-  });
-  var catKeys = Object.keys(groups);
-  var catCount = catKeys.length;
-
-  document.getElementById('confirm-count').textContent =
-    _t('confirm.will_delete') + ' ' + catCount + ' ' + _t('confirm.classes') + ' ' + selected.length + ' ' + _t('results.items');
-
-  var listHtml = '';
-  catKeys.forEach(function(cat) {
-    var catItems = groups[cat];
-    var totalSize = 0;
-    catItems.forEach(function(item) { totalSize += (item.size || 0); });
-    listHtml += '<div class="summary-cat-row">'
-      + '<span>' + (_t('cat.' + cat) || cat) + '</span>'
-      + '<span>' + catItems.length + ' ' + _t('results.items') + ' - ' + formatSize(totalSize) + '</span>'
-      + '</div>';
-  });
-  document.getElementById('confirm-summary').innerHTML = listHtml;
-
-  // Check sandbox status for notice
+  // Check sandbox status first
   fetch('/api/sandbox/status').then(function(r) { return r.json(); }).then(function(d) {
-    document.getElementById('sandbox-notice').style.display = d.enabled ? 'block' : 'none';
-  }).catch(function() {});
-
-  showView('confirm');
+    if (d.enabled) {
+      document.getElementById('confirm-count').innerHTML =
+        '<div style="text-align:center;padding:16px 0">'
+        + '<div style="font-size:2.5rem;margin-bottom:8px">\u{1F6E1}️</div>'
+        + '<div style="font-size:1.1rem;font-weight:600;margin-bottom:4px">' + _t('sandbox.mode') + '</div>'
+        + '<div style="font-size:0.85rem;color:#d29922">' + _t('sandbox.no_clean') + '</div>'
+        + '</div>';
+      document.getElementById('confirm-summary').innerHTML = '';
+      document.getElementById('modal-warning-box').style.display = 'none';
+      document.getElementById('confirm-actions').innerHTML =
+        '<button class="btn btn-ghost" onclick="showView(\'results\')">' + _t('btn.cancel') + '</button>'
+        + '<button class="btn btn-primary" onclick="toggleSandbox()" style="background:#d29922">\u{1F6FE} ' + _t('sandbox.exit') + '</button>';
+      showView('confirm');
+    } else {
+      var groups = {};
+      selected.forEach(function(item) {
+        if (!groups[item.category]) groups[item.category] = [];
+        groups[item.category].push(item);
+      });
+      var catKeys = Object.keys(groups);
+      var catCount = catKeys.length;
+      document.getElementById('confirm-count').textContent =
+        _t('confirm.will_delete') + ' ' + catCount + ' ' + _t('confirm.classes') + ' ' + selected.length + ' ' + _t('results.items');
+      var listHtml = '';
+      catKeys.forEach(function(cat) {
+        var catItems = groups[cat];
+        var totalSize = 0;
+        catItems.forEach(function(item) { totalSize += (item.size || 0); });
+        listHtml += '<div class="summary-cat-row">'
+          + '<span>' + (_t('cat.' + cat) || cat) + '</span>'
+          + '<span>' + catItems.length + ' ' + _t('results.items') + ' - ' + formatSize(totalSize) + '</span>'
+          + '</div>';
+      });
+      document.getElementById('confirm-summary').innerHTML = listHtml;
+      document.getElementById('modal-warning-box').style.display = '';
+      document.getElementById('confirm-actions').innerHTML =
+        '<button class="btn btn-ghost" onclick="showView(\'results\')">' + _t('btn.cancel') + '</button>'
+        + '<button class="btn btn-danger" onclick="executeClean()">'
+        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> '
+        + _t('btn.confirm') + '</button>';
+      showView('confirm');
+    }
+  }).catch(function() {
+    showView('confirm');
+  });
 }
 
 function getSelectedItems() {
