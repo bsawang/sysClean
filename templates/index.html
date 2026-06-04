@@ -590,6 +590,7 @@ function switchLang(lang) {
     if (curView === 'software' && typeof allPrograms !== 'undefined' && allPrograms.length > 0) {
       renderSoftwareList(getFilteredSoftware());
     }
+    // Re-apply translations to confirm title/subtitle (data-i18n handles these)
   });
 }
 
