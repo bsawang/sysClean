@@ -270,29 +270,30 @@ class ScannerEngine:
                 continue
 
     def scan_browser(self):
-        """Scan browser cache directories (Chrome Cache, Code Cache)."""
+        """Scan browser cache directories: Chrome, Edge, Firefox."""
         local = self.user_home / "AppData" / "Local"
+
         chrome_cache = (
-            local
-            / "Google"
-            / "Chrome"
-            / "User Data"
-            / "Default"
-            / "Cache"
+            local / "Google" / "Chrome" / "User Data" / "Default" / "Cache"
         )
         chrome_code_cache = (
-            local
-            / "Google"
-            / "Chrome"
-            / "User Data"
-            / "Default"
-            / "Code Cache"
+            local / "Google" / "Chrome" / "User Data" / "Default" / "Code Cache"
+        )
+        edge_cache = (
+            local / "Microsoft" / "Edge" / "User Data" / "Default" / "Cache"
+        )
+        edge_code_cache = (
+            local / "Microsoft" / "Edge" / "User Data" / "Default" / "Code Cache"
         )
 
         browser_paths = [
             (chrome_cache, "Chrome browser cache"),
             (chrome_code_cache, "Chrome Code Cache"),
+            (edge_cache, "Edge browser cache"),
+            (edge_code_cache, "Edge Code Cache"),
         ]
+
+        # Chrome and Edge (well-known paths)
         for path_, desc in browser_paths:
             if not path_.exists():
                 continue
@@ -308,6 +309,210 @@ class ScannerEngine:
                     item_count=count,
                 )
 
+        # Firefox — walk all profiles
+        firefox_root = local / "Mozilla" / "Firefox" / "Profiles"
+        if firefox_root.exists():
+            for profile_dir in firefox_root.iterdir():
+                if not profile_dir.is_dir():
+                    continue
+                cache2 = profile_dir / "cache2"
+                if cache2.exists():
+                    sz, cnt = self._walk_size(cache2)
+                    if sz > 0 or cnt > 0:
+                        yield ScanItem(
+                            id=self._next_id("BRWS"),
+                            category="browser",
+                            path=str(cache2),
+                            size=sz,
+                            risk=classify_risk(str(cache2), sz),
+                            risk_desc=f"Firefox cache ({profile_dir.name})",
+                            item_count=cnt,
+                        )
+                thumbnails = profile_dir / "thumbnails"
+                if thumbnails.exists():
+                    sz, cnt = self._walk_size(thumbnails)
+                    if sz > 0 or cnt > 0:
+                        yield ScanItem(
+                            id=self._next_id("BRWS"),
+                            category="browser",
+                            path=str(thumbnails),
+                            size=sz,
+                            risk=classify_risk(str(thumbnails), sz),
+                            risk_desc=f"Firefox thumbnails ({profile_dir.name})",
+                            item_count=cnt,
+                        )
+
+    def scan_thumbcache(self):
+        """Scan Windows thumbnail cache (thumbcache_*.db, iconcache_*.db)."""
+        explorer = (
+            self.user_home
+            / "AppData"
+            / "Local"
+            / "Microsoft"
+            / "Windows"
+            / "Explorer"
+        )
+        if not explorer.exists():
+            return
+        size, count = self._walk_size(explorer)
+        if size > 0 or count > 0:
+            yield ScanItem(
+                id=self._next_id("THUMB"),
+                category="thumbcache",
+                path=str(explorer),
+                size=size,
+                risk=classify_risk(str(explorer), size),
+                risk_desc="Windows thumbnail and icon cache files",
+                item_count=count,
+            )
+
+    def scan_prefetch(self):
+        """Scan Windows Prefetch files (C:\\Windows\\Prefetch)."""
+        prefetch = Path("C:\\Windows\\Prefetch")
+        if not prefetch.exists():
+            return
+        size, count = self._walk_size(prefetch)
+        if size > 0 or count > 0:
+            yield ScanItem(
+                id=self._next_id("PREF"),
+                category="prefetch",
+                path=str(prefetch),
+                size=size,
+                risk=classify_risk(str(prefetch), size),
+                risk_desc="Application launch prefetch files",
+                item_count=count,
+            )
+
+    def scan_sysdumps(self):
+        """Scan crash dumps, Windows Error Reporting, and logs.
+
+        Note: some paths require admin privileges and may be silently
+        skipped for non-admin users.
+        """
+        local = self.user_home / "AppData" / "Local"
+        candidates = [
+            (local / "CrashDumps", "Application crash dumps", RiskLevel.SAFE),
+            (local / "Microsoft" / "Windows" / "WER", "User Windows Error Reporting", RiskLevel.SAFE),
+            (Path("C:\\ProgramData") / "Microsoft" / "Windows" / "WER", "System Windows Error Reporting", RiskLevel.SAFE),
+            (Path("C:\\Windows\\Minidump"), "System minidumps", RiskLevel.CAUTION),
+            (Path("C:\\Windows\\Logs"), "Windows logs", RiskLevel.SAFE),
+            (Path("C:\\Windows\\System32\\LogFiles"), "System log files", RiskLevel.SAFE),
+        ]
+        for path_, desc, risk in candidates:
+            if not path_.exists():
+                continue
+            size, count = self._walk_size(path_)
+            if size > 0 or count > 0:
+                yield ScanItem(
+                    id=self._next_id("DUMP"),
+                    category="sysdumps",
+                    path=str(path_),
+                    size=size,
+                    risk=risk,
+                    risk_desc=desc,
+                    item_count=count,
+                )
+
+        # memory.dmp — separate check since it's a single file
+        memory_dmp = Path("C:\\Windows\\memory.dmp")
+        if memory_dmp.exists():
+            try:
+                msize = memory_dmp.stat().st_size
+            except OSError:
+                msize = 0
+            if msize > 0:
+                yield ScanItem(
+                    id=self._next_id("DUMP"),
+                    category="sysdumps",
+                    path=str(memory_dmp),
+                    size=msize,
+                    risk=RiskLevel.CAUTION,
+                    risk_desc="Full system memory dump",
+                    item_count=1,
+                )
+
+    def scan_package(self):
+        """Scan package manager caches (npm, yarn, pnpm, pip, NuGet, Go, Cargo)."""
+        local = self.user_home / "AppData" / "Local"
+        roaming = self.user_home / "AppData" / "Roaming"
+        user = self.user_home
+
+        candidates = [
+            (roaming / "npm-cache", "npm cache", RiskLevel.SAFE),
+            (user / ".yarn" / "cache", "Yarn cache", RiskLevel.SAFE),
+            (local / "pnpm" / "store", "pnpm store", RiskLevel.SAFE),
+            (local / "pip" / "cache", "pip cache", RiskLevel.SAFE),
+            (user / ".nuget" / "packages", "NuGet package cache", RiskLevel.CAUTION),
+            (user / "go" / "pkg" / "mod", "Go module cache", RiskLevel.SAFE),
+            (user / ".cargo" / "registry", "Cargo registry cache", RiskLevel.SAFE),
+        ]
+        for path_, desc, risk in candidates:
+            if not path_.exists():
+                continue
+            size, count = self._walk_size(path_)
+            if size > 0 or count > 0:
+                yield ScanItem(
+                    id=self._next_id("PKG"),
+                    category="package",
+                    path=str(path_),
+                    size=size,
+                    risk=risk,
+                    risk_desc=desc,
+                    item_count=count,
+                )
+
+    def scan_devcache(self):
+        """Scan VSCode/development tool caches."""
+        roaming = self.user_home / "AppData" / "Roaming"
+        code = roaming / "Code"
+
+        candidates = [
+            (code / "Cache", "VSCode main cache", RiskLevel.SAFE),
+            (code / "CachedData", "VSCode cached data", RiskLevel.SAFE),
+            (code / "User" / "workspaceStorage", "VSCode workspace state*", RiskLevel.SAFE),
+        ]
+        for path_, desc, risk in candidates:
+            if not path_.exists():
+                continue
+            size, count = self._walk_size(path_)
+            if size > 0 or count > 0:
+                yield ScanItem(
+                    id=self._next_id("DEV"),
+                    category="devcache",
+                    path=str(path_),
+                    size=size,
+                    risk=risk,
+                    risk_desc=desc,
+                    item_count=count,
+                )
+
+    def scan_othercache(self):
+        """Scan other system caches (INetCache, FontCache, Store, Java)."""
+        local = self.user_home / "AppData" / "Local"
+        user = self.user_home
+
+        candidates = [
+            (local / "Microsoft" / "Windows" / "INetCache", "Internet temporary files", RiskLevel.SAFE),
+            (local / "Microsoft" / "Windows" / "Caches", "System caches", RiskLevel.SAFE),
+            (local / "FontCache", "Windows font cache", RiskLevel.SAFE),
+            (local / "Microsoft" / "Windows" / "Store" / "Cache", "Microsoft Store cache", RiskLevel.SAFE),
+            (user / ".java" / "deployment" / "cache", "Java deployment cache", RiskLevel.SAFE),
+        ]
+        for path_, desc, risk in candidates:
+            if not path_.exists():
+                continue
+            size, count = self._walk_size(path_)
+            if size > 0 or count > 0:
+                yield ScanItem(
+                    id=self._next_id("OTHER"),
+                    category="othercache",
+                    path=str(path_),
+                    size=size,
+                    risk=risk,
+                    risk_desc=desc,
+                    item_count=count,
+                )
+
     # -----------------------------------------------------------------------
     # Dispatcher
     # -----------------------------------------------------------------------
@@ -318,7 +523,9 @@ class ScannerEngine:
         Args:
             categories: Iterable of category names to scan.
                         Supported: ``temp``, ``cache``, ``installer``,
-                        ``browser``.
+                        ``browser``, ``thumbcache``, ``prefetch``,
+                        ``sysdumps``, ``package``, ``devcache``,
+                        ``othercache``.
 
         Yields:
             ScanItem objects from each matching scanner method.
@@ -328,6 +535,12 @@ class ScannerEngine:
             "cache": self.scan_cache,
             "installer": self.scan_installer,
             "browser": self.scan_browser,
+            "thumbcache": self.scan_thumbcache,
+            "prefetch": self.scan_prefetch,
+            "sysdumps": self.scan_sysdumps,
+            "package": self.scan_package,
+            "devcache": self.scan_devcache,
+            "othercache": self.scan_othercache,
         }
         for cat in categories:
             dispatcher = dispatchers.get(cat)
