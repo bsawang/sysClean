@@ -211,7 +211,6 @@ def api_sandbox_start():
         return jsonify({"error": "沙盒已激活，请先退出"}), 409
 
     sandbox_enabled = True
-    scan_results = []
     return jsonify({
         "status": "started",
         "message": "沙盒模式已激活 — 真实扫描，模拟清理，不会删除任何文件",
@@ -226,7 +225,6 @@ def api_sandbox_stop():
         return jsonify({"error": "沙盒未激活"}), 400
 
     sandbox_enabled = False
-    scan_results = []
     return jsonify({
         "status": "stopped",
         "message": "沙盒模式已退出",
