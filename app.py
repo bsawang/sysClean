@@ -633,6 +633,7 @@ def _read_registered_programs():
                         "install_type": install_type,
                         "estimated_size": est_size,
                         "uninstall_string": ustr,
+                        "display_icon": _read_str(sub_key, "DisplayIcon"),
                         "source": "registry",
                     })
         finally:
@@ -742,6 +743,15 @@ def api_uninstall_start():
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
+    if not is_admin():
+        import sys
+        import ctypes.wintypes
+        print("[SysClean] Not running as admin, relaunching with admin privileges...")
+        ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", sys.executable, " ".join(sys.argv), None, 1
+        )
+        sys.exit(0)
+
     print("[SysClean] Starting...")
     print("   Visit http://localhost:5000")
     app.run(host="127.0.0.1", port=5000, debug=True)
