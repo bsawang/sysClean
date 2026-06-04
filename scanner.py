@@ -45,6 +45,9 @@ _CAUTION_PATTERNS = [
     "*\\JianyingPro\\Apps\\*",
     "*\\StreetFighterV\\*",
     "*\\Program Files\\WindowsApps\\*",
+    "*\\$Recycle.Bin\\*",
+    "*\\.nuget\\packages\\*",
+    "*\\Minidump\\*",
 ]
 
 _SAFE_PATTERNS = [
@@ -62,6 +65,27 @@ _SAFE_PATTERNS = [
     "*\\Google\\Chrome\\*Cache\\*",
     "*\\Code Cache\\*",
     "*\\app_shell_cache*\\*",
+    # Additional safe patterns for scan expansion
+    "*\\Explorer\\thumbcache_*.db",
+    "*\\Explorer\\iconcache_*.db",
+    "*\\Windows\\Prefetch\\*",
+    "*\\CrashDumps\\*",
+    "*\\WER\\*",
+    "*\\Logs\\*",
+    "*\\LogFiles\\*",
+    "*\\Microsoft\\Edge\\*Cache\\*",
+    "*\\cache2\\*",
+    "*\\CachedData\\*",
+    "*\\workspaceStorage\\*",
+    "*\\INetCache\\*",
+    "*\\FontCache\\*",
+    "*\\Windows\\Caches\\*",
+    "*\\Windows\\Store\\Cache\\*",
+    "*\\.yarn\\cache\\*",
+    "*\\pnpm\\store\\*",
+    "*\\go\\pkg\\mod\\*",
+    "*\\.cargo\\registry\\*",
+    "*\\.java\\deployment\\cache\\*",
 ]
 
 
