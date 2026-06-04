@@ -1511,7 +1511,7 @@ function showSoftwareView() {
 function renderSoftwareList(programs) {
     var html = '';
     programs.forEach(function(p) {
-        html += '<div class="result-item" style="border-bottom:1px solid #21262d">'
+        html += '<div class="result-item soft-item" style="border-bottom:1px solid #21262d" onclick="toggleSoftwareCb(this)" data-checked="1">'
             + '<input type="checkbox" class="software-cb" data-name="' + escapeHtml(p.name) + '" checked>'
             + '<div style="flex:1;min-width:0;margin-left:8px">'
             + '<div style="display:flex;align-items:baseline;gap:8px">'
@@ -1577,8 +1577,22 @@ function getFilteredSoftware() {
     return list;
 }
 
+function toggleSoftwareCb(row) {
+    var cb = row.querySelector('.software-cb');
+    cb.checked = !cb.checked;
+    row.dataset.checked = cb.checked ? '1' : '0';
+    if (cb.checked) { row.classList.add('selected'); }
+    else { row.classList.remove('selected'); }
+}
+
 function selectAllSoftware(select) {
-    document.querySelectorAll('.software-cb').forEach(function(cb) { cb.checked = select; });
+    document.querySelectorAll('.soft-item').forEach(function(row) {
+        var cb = row.querySelector('.software-cb');
+        cb.checked = select;
+        row.dataset.checked = select ? '1' : '0';
+        if (select) { row.classList.add('selected'); }
+        else { row.classList.remove('selected'); }
+    });
 }
 
 function startUninstall() {
