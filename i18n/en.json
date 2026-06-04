@@ -73,5 +73,8 @@
   "sandbox.active": "Sandbox Mode Active — real scan, simulated cleanup",
   "sandbox.simulate": "Sandbox Mode — simulation only, no files will be deleted",
   "sandbox.no_clean": "Cannot clean in Sandbox Mode. Please exit Sandbox Mode and try again.",
-  "sandbox.blocked": "Blocked — Sandbox Mode"
+  "sandbox.blocked": "Blocked — Sandbox Mode",
+  "operation.busy": "Another operation is in progress, please wait",
+  "admin.required": "Admin privileges required",
+  "admin.limited": "Limited by user permissions"
 }
