@@ -1486,7 +1486,6 @@ function restoreState() {
 // ====================================================================
 document.addEventListener('DOMContentLoaded', function() {
   var urlLang = new URLSearchParams(window.location.search).get('lang') || '{{ lang }}';
-  loadTranslations(urlLang);
 
   fetch('/api/disk').then(function(r) { return r.json(); }).then(function(data) {
     diskBefore = data;
@@ -1498,10 +1497,12 @@ document.addEventListener('DOMContentLoaded', function() {
   refreshRecycleStatus();
   refreshSearchStatus();
 
-  // Restore previous state if available
-  if (!restoreState()) {
-    showView('empty');
-  }
+  // Load translations first, then restore state (i18n must be ready)
+  loadTranslations(urlLang).then(function() {
+    if (!restoreState()) {
+      showView('empty');
+    }
+  });
 });
 
 // ====================================================================
