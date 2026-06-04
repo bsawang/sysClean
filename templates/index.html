@@ -32,10 +32,14 @@
     .sandbox-toggle input:checked + .toggle-track .toggle-thumb { left: 17px; background: #d29922; }
     .toggle-label { font-size: 0.78rem; color: #8b949e; }
     .disk-card-loading { color: #8b949e; font-size: 0.85rem; padding: 16px; text-align: center; }
-    #software-list::-webkit-scrollbar { width: 6px; }
-    #software-list::-webkit-scrollbar-track { background: transparent; }
-    #software-list::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
-    #software-list::-webkit-scrollbar-thumb:hover { background: #8b949e; }
+    #software-list::-webkit-scrollbar,
+    #results-container::-webkit-scrollbar { width: 6px; }
+    #software-list::-webkit-scrollbar-track,
+    #results-container::-webkit-scrollbar-track { background: transparent; }
+    #software-list::-webkit-scrollbar-thumb,
+    #results-container::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+    #software-list::-webkit-scrollbar-thumb:hover,
+    #results-container::-webkit-scrollbar-thumb:hover { background: #8b949e; }
     .header-right { display: flex; align-items: center; gap: 16px; margin-left: auto; }
     .header h1 { font-size: 1.15rem; font-weight: 600; color: #c9d1d9; }
     .action-buttons { display: flex; gap: 8px; border-top: 1px solid #21262d; padding-top: 16px; margin-top: 16px; justify-content: flex-end; }
@@ -319,8 +323,8 @@
       <!-- ---------------------------------------------------------- -->
       <!-- View 3: Scan results                                       -->
       <!-- ---------------------------------------------------------- -->
-      <div id="view-results" class="hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div id="view-results" class="hidden" style="display:flex;flex-direction:column;height:100%">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-shrink:0">
           <h2 style="font-size:1.1rem;font-weight:600;color:#c9d1d9">
             <span data-i18n="results.title">Scan Results</span>
             <span id="results-total" style="color:#8b949e;font-size:0.9rem;font-weight:400;margin-left:8px">0 items</span>
@@ -329,10 +333,10 @@
         </div>
 
         <!-- Results container -->
-        <div id="results-container"></div>
+        <div id="results-container" style="flex:1;overflow-y:auto;min-height:200px"></div>
 
         <!-- Action buttons -->
-        <div class="action-buttons">
+        <div class="action-buttons" style="flex-shrink:0">
           <button class="btn btn-ghost btn-sm" onclick="selectAllItems(true)" data-i18n="btn.select_all">Select All</button>
           <button class="btn btn-ghost btn-sm" onclick="selectAllItems(false)" data-i18n="btn.deselect_all">Deselect All</button>
           <button class="btn btn-danger btn-sm" onclick="confirmClean()">
