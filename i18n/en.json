@@ -62,6 +62,7 @@
   "complete.freed": "Total space freed",
   "complete.cleaned": "Cleaned",
   "complete.time": "Time Elapsed",
+  "complete.detail": "Cleanup Details",
   "complete.before": "Before",
   "complete.after": "After",
 

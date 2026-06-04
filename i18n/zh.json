@@ -62,6 +62,7 @@
   "complete.freed": "共释放空间",
   "complete.cleaned": "已清理",
   "complete.time": "耗时",
+  "complete.detail": "清理明细",
   "complete.before": "清理前",
   "complete.after": "清理后",
 

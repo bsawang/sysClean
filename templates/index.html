@@ -370,6 +370,10 @@
           </div>
         </div>
 
+        <!-- Cleaned items detail list -->
+        <div id="complete-items" style="max-width:500px;margin:0 auto 20px;text-align:left;border:1px solid #21262d;border-radius:8px;overflow:hidden;max-height:200px;overflow-y:auto">
+        </div>
+
         <!-- Back to Home button -->
         <button class="btn btn-ghost" onclick="goHome()">
           <span data-i18n="btn.back_home">&larr; Back to Home</span>
@@ -865,6 +869,7 @@ async function executeClean() {
 
   showView('clean');
 
+  var cleanedItems = [];
   // Reset progress
   document.getElementById('clean-progress-fill').style.width = '0%';
   document.getElementById('clean-freed').textContent = '0 B';
@@ -909,6 +914,7 @@ async function executeClean() {
               document.getElementById('clean-progress-pct').textContent = pct + '%';
               document.getElementById('clean-freed').textContent = formatSize(event.freed_so_far);
               document.getElementById('clean-completed').textContent = event.completed + ' / ' + event.total;
+              cleanedItems.push({ path: event.path, success: event.success, size: event.freed_so_far });
 
               // Add to live feed
               var feed = document.getElementById('clean-feed');
@@ -928,6 +934,7 @@ async function executeClean() {
 
             if (event.type === 'clean_complete') {
               cleanData = event;
+              cleanData.items = cleanedItems;
               cleanData.elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
             }
           } catch (e) {}
@@ -953,6 +960,25 @@ function showComplete(data) {
   document.getElementById('complete-cleaned-count').textContent = data.completed - data.failed_count;
   document.getElementById('complete-failed-count').textContent = data.failed_count;
   document.getElementById('complete-time').textContent = (data.elapsed || '0.0') + 's';
+
+  // Render cleaned items detail list
+  var listEl = document.getElementById('complete-items');
+  var listHtml = '';
+  if (data.items && data.items.length > 0) {
+    listHtml += '<div style="padding:8px 12px;background:#161b22;font-size:0.78rem;color:#8b949e;border-bottom:1px solid #21262d">' + _t('complete.detail') + '</div>';
+    data.items.forEach(function(item) {
+      var icon = item.success
+        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 10"/></svg>'
+        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f85149" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+      listHtml += '<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;font-size:0.82rem;border-bottom:1px solid #21262d">'
+        + icon
+        + '<span class="mono" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8b949e">' + escapeHtml(item.path) + '</span>'
+        + '<span style="color:' + (item.success ? '#3fb950' : '#f85149') + ';white-space:nowrap">'
+        + (item.success ? formatSize(item.size) : _t('clean.failed'))
+        + '</span></div>';
+    });
+  }
+  listEl.innerHTML = listHtml;
 
   // Fetch updated disk info for before/after comparison
   fetch('/api/disk').then(function(r) { return r.json(); }).then(function(diskAfter) {
