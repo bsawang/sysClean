@@ -9,6 +9,7 @@ and process listing with i18n support.
 import json
 import os
 import subprocess
+import sys
 import threading
 import winreg
 from pathlib import Path
@@ -743,7 +744,6 @@ def api_uninstall_start():
 
 if __name__ == "__main__":
     if not is_admin() and "--elevated" not in sys.argv:
-        import subprocess
         print("[SysClean] Not running as admin, relaunching silently...")
         args = [sys.executable] + sys.argv + ["--elevated"]
         subprocess.run(
