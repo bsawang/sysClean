@@ -597,14 +597,25 @@ def _read_registered_programs():
 
                     ustr = _read_str(sub_key, "UninstallString")
 
-                    # Try InstallLocation, then fallback to DisplayIcon directory
-                    install_path = _read_str(sub_key, "InstallLocation")
+                    # Helper: strip surrounding quotes
+                    def _strip_q(s):
+                        s = s.strip()
+                        while s and s[0] in ('"', "'") and s[-1] in ('"', "'"):
+                            s = s[1:-1].strip()
+                        return s
+
+                    # Try InstallLocation, then DisplayIcon dir, then UninstallString dir
+                    install_path = _strip_q(_read_str(sub_key, "InstallLocation"))
                     if not install_path or not os.path.isdir(install_path):
-                        icon = _read_str(sub_key, "DisplayIcon")
+                        icon = _strip_q(_read_str(sub_key, "DisplayIcon"))
                         if icon and os.path.isfile(icon):
                             install_path = os.path.dirname(icon)
                         elif icon and os.path.isdir(icon):
                             install_path = icon
+                    if not install_path or not os.path.isdir(install_path):
+                        ustr_path = _strip_q(ustr)
+                        if ustr_path and os.path.isfile(ustr_path):
+                            install_path = os.path.dirname(ustr_path)
 
                     last_used = ""
                     est_size = _read_int(sub_key, "EstimatedSize") * 1024
