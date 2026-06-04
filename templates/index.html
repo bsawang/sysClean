@@ -212,6 +212,21 @@
           <span data-i18n="recycle.empty">Empty Recycle Bin</span>
         </button>
       </div>
+      <!-- Search Index -->
+      <div id="search-section" style="margin-top:10px">
+        <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:#8b949e;margin-bottom:6px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <span data-i18n="search.title">Search Index</span>
+          <span id="search-size" style="margin-left:auto;font-size:0.78rem;color:#d29922">-</span>
+        </div>
+        <button class="btn btn-ghost btn-sm btn-operation" onclick="rebuildSearchIndex()" style="width:100%;font-size:0.82rem;" id="btn-rebuild-index">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span data-i18n="search.rebuild">Rebuild Index</span>
+        </button>
+        <div id="search-status" style="font-size:0.72rem;color:#8b949e;margin-top:4px;text-align:center;"></div>
+      </div>
       <!-- Sandbox toggle -->
       <hr style="border:none;border-top:1px solid #21262d;margin:14px 0;">
       <button class="btn btn-ghost btn-sm" id="btn-sandbox" onclick="toggleSandbox()" style="width:100%;font-size:0.82rem;">
@@ -611,6 +626,44 @@ function refreshCompleteHints() {
         .then(function(d) {
             document.getElementById('hint-search-size').textContent = d.size_fmt;
         });
+}
+
+// ====================================================================
+// Search Index
+// ====================================================================
+function refreshSearchStatus() {
+    fetch('/api/search/status')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            document.getElementById('search-size').textContent = d.size_fmt;
+            var statusEl = document.getElementById('search-status');
+            if (d.rebuilding) {
+                statusEl.textContent = _t('search.rebuilding');
+            } else if (d.service_running === false) {
+                statusEl.textContent = _t('search.stopped');
+            } else {
+                statusEl.textContent = _t('search.ready');
+            }
+        });
+}
+
+function rebuildSearchIndex() {
+    if (isBusy) { alert(BUSY_MSG); return; }
+    if (!confirm(_t('search.confirm'))) return;
+    startBusyPolling();
+    var btn = document.getElementById('btn-rebuild-index');
+    btn.disabled = true;
+    fetch('/api/search/rebuild', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.status === 'rebuilding') {
+                document.getElementById('search-status').textContent = _t('search.rebuilding');
+            } else {
+                alert(d.error || 'Failed');
+                btn.disabled = false;
+            }
+        })
+        .catch(function() { alert('Failed'); btn.disabled = false; });
 }
 
 // ====================================================================
@@ -1337,6 +1390,7 @@ document.addEventListener('DOMContentLoaded', function() {
   checkBusy();
   refreshDiskCard();
   refreshRecycleStatus();
+  refreshSearchStatus();
 
   // Restore previous state if available
   if (!restoreState()) {

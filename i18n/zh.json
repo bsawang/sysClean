@@ -93,5 +93,11 @@
   "recycle.empty": "清空回收站",
   "recycle.confirm": "确定要清空回收站吗？此操作不可撤销，文件将被永久删除。",
   "complete.hints.title": "💡 建议后续操作",
-  "complete.hints.goto": "前往"
+  "complete.hints.goto": "前往",
+  "search.title": "搜索索引",
+  "search.rebuild": "重建索引",
+  "search.rebuilding": "正在重建中...",
+  "search.stopped": "服务已停止",
+  "search.ready": "正常",
+  "search.confirm": "确定要重建搜索索引吗？\n\n重建期间 Windows 搜索将不可用，索引重建过程可能需要数小时，且 CPU 占用较高。\n\n此操作不可撤销！"
 }
