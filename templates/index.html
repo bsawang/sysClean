@@ -575,13 +575,15 @@
 // ====================================================================
 let _T = {};
 async function loadTranslations(lang) {
-  const resp = await fetch('/api/translations?lang=' + lang);
-  _T = await resp.json();
+  try {
+    const resp = await fetch('/api/translations?lang=' + lang);
+    _T = await resp.json();
+  } catch(e) { console.warn('i18n load failed:', e); }
   document.querySelectorAll('[data-i18n]').forEach(function(el) {
     el.textContent = _t(el.getAttribute('data-i18n'));
   });
 }
-function _t(key) { return _T[key] || key; }
+function _t(key) { return (_T && _T[key]) || key; }
 function switchLang(lang) {
   var url = new URL(window.location);
   url.searchParams.set('lang', lang);
