@@ -507,13 +507,10 @@
           🔒 <span data-i18n="software.admin_warn">Some programs require admin privileges to uninstall</span>
         </div>
 
-        <div style="margin-bottom:12px">
-          <input type="text" id="software-filter" oninput="filterSoftware()" placeholder="Filter..." style="width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;color:#c9d1d9;font-size:0.88rem">
-        </div>
-
-        <div style="display:flex;gap:6px;margin-bottom:8px">
-          <button class="btn btn-ghost btn-sm" onclick="sortSoftware('date')" style="font-size:0.78rem" id="sort-date"><span data-i18n="software.sort_date">安装日期</span> ↓</button>
-          <button class="btn btn-ghost btn-sm" onclick="sortSoftware('size')" style="font-size:0.78rem" id="sort-size"><span data-i18n="software.sort_size">大小</span> ↓</button>
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
+          <input type="text" id="software-filter" oninput="filterSoftware()" placeholder="Filter..." style="flex:1;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;color:#c9d1d9;font-size:0.88rem">
+          <button class="btn btn-ghost btn-sm" onclick="sortSoftware('date')" style="font-size:0.78rem;white-space:nowrap" id="sort-date"><span data-i18n="software.sort_date">安装日期</span> ↓</button>
+          <button class="btn btn-ghost btn-sm" onclick="sortSoftware('size')" style="font-size:0.78rem;white-space:nowrap" id="sort-size"><span data-i18n="software.sort_size">大小</span> ↓</button>
         </div>
 
         <div id="software-loading" style="text-align:center;padding:32px;color:#8b949e" data-i18n="software.loading">Loading...</div>
@@ -563,6 +560,11 @@ async function loadTranslations(lang) {
   document.querySelectorAll('[data-i18n]').forEach(function(el) {
     el.textContent = _t(el.getAttribute('data-i18n'));
   });
+  // Re-apply sort button states after translation
+  var sDate = document.getElementById('sort-date');
+  var sSize = document.getElementById('sort-size');
+  if (sDate) sDate.textContent = _t('software.sort_date') + ' ' + (_softwareSortField === 'date' ? (_softwareSortAsc ? '↑' : '↓') : '↓');
+  if (sSize) sSize.textContent = _t('software.sort_size') + ' ' + (_softwareSortField === 'size' ? (_softwareSortAsc ? '↑' : '↓') : '↓');
 }
 function _t(key) { return (_T && _T[key]) || key; }
 function switchLang(lang) {
@@ -1502,7 +1504,7 @@ function showSoftwareView() {
             var adminWarn = document.getElementById('software-admin-warn');
             adminWarn.style.display = d.admin ? 'none' : '';
 
-            renderSoftwareList(allPrograms);
+            renderSoftwareList(getFilteredSoftware());
         });
 }
 
