@@ -608,19 +608,6 @@ def _read_registered_programs():
                     est_size = _read_int(sub_key, "EstimatedSize") * 1024
 
                     if install_path and os.path.isdir(install_path):
-                        # Compute size from folder if registry size is missing
-                        if est_size <= 0:
-                            try:
-                                total = 0
-                                for root, dirs, files in os.walk(install_path):
-                                    for f in files:
-                                        try:
-                                            total += os.path.getsize(os.path.join(root, f))
-                                        except OSError:
-                                            pass
-                                est_size = total
-                            except Exception:
-                                pass
                         # Last used time from directory
                         try:
                             from datetime import datetime
