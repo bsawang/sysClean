@@ -68,5 +68,6 @@
   "sandbox.mode": "Sandbox Mode",
   "sandbox.enter": "Sandbox Demo Mode",
   "sandbox.exit": "Exit Sandbox Mode",
-  "sandbox.simulate": "Sandbox Mode — simulated only, no files will be deleted"
+  "sandbox.active": "Sandbox Mode Active — real scan, simulated cleanup",
+  "sandbox.simulate": "Sandbox Mode — simulation only, no files will be deleted"
 }

@@ -38,7 +38,6 @@ scan_engine = ScannerEngine()
 
 # Sandbox mode
 sandbox_enabled = False
-sandbox_path: str = ""  # empty = not in sandbox mode
 
 
 # ---------------------------------------------------------------------------
@@ -217,12 +216,11 @@ def api_processes():
 @app.route("/api/sandbox/start", methods=["POST"])
 def api_sandbox_start():
     """Activate sandbox mode: real scanning, simulated cleanup."""
-    global sandbox_enabled, sandbox_path, scan_results
+    global sandbox_enabled, scan_results
     if sandbox_enabled:
         return jsonify({"error": "沙盒已激活，请先退出"}), 409
 
     sandbox_enabled = True
-    sandbox_path = "(沙盒模式)"
     scan_results = []
     return jsonify({
         "status": "started",
@@ -233,12 +231,11 @@ def api_sandbox_start():
 @app.route("/api/sandbox/stop", methods=["POST"])
 def api_sandbox_stop():
     """Deactivate sandbox mode."""
-    global sandbox_enabled, sandbox_path, scan_results
+    global sandbox_enabled, scan_results
     if not sandbox_enabled:
         return jsonify({"error": "沙盒未激活"}), 400
 
     sandbox_enabled = False
-    sandbox_path = ""
     scan_results = []
     return jsonify({
         "status": "stopped",
@@ -251,7 +248,6 @@ def api_sandbox_status():
     """Return whether sandbox mode is active."""
     return jsonify({
         "enabled": sandbox_enabled,
-        "path": sandbox_path if sandbox_enabled else "",
     })
 
 
