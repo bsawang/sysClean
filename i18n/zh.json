@@ -63,5 +63,9 @@
   "complete.cleaned": "已清理",
   "complete.time": "耗时",
   "complete.before": "清理前",
-  "complete.after": "清理后"
+  "complete.after": "清理后",
+
+  "sandbox.mode": "沙盒模式",
+  "sandbox.enter": "沙盒体验模式",
+  "sandbox.exit": "退出沙盒模式"
 }

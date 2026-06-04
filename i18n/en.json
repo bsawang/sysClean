@@ -63,5 +63,9 @@
   "complete.cleaned": "Cleaned",
   "complete.time": "Time Elapsed",
   "complete.before": "Before",
-  "complete.after": "After"
+  "complete.after": "After",
+
+  "sandbox.mode": "Sandbox Mode",
+  "sandbox.enter": "Sandbox Demo Mode",
+  "sandbox.exit": "Exit Sandbox Mode"
 }

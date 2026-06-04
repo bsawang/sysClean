@@ -7,6 +7,7 @@ and process listing with i18n support.
 """
 
 import json
+import os
 import threading
 
 import psutil
@@ -33,6 +34,10 @@ scan_results: list[ScanItem] = []
 scan_in_progress = False
 scan_lock = threading.Lock()
 scan_engine = ScannerEngine()
+
+# Sandbox mode
+sandbox_enabled = False
+sandbox_path: str = ""  # empty = not in sandbox mode
 
 
 # ---------------------------------------------------------------------------
@@ -74,6 +79,60 @@ def _risk_label(risk: RiskLevel, lang: str) -> str:
     return _RISK_LABELS.get(risk, {}).get(lang, risk.value)
 
 
+def _scan_sandbox(sbox_path: str, categories: list[str]) -> list[ScanItem]:
+    """Scan the sandbox directory and return ScanItems based on categories."""
+    from scanner import classify_risk
+    items = []
+    counter = 0
+
+    for root, dirs, files in os.walk(sbox_path):
+        # Determine category from the directory name
+        rel = os.path.relpath(root, sbox_path).lower()
+        if not files:
+            continue
+
+        if "temp" in categories and ("temp" in rel or "cache" in rel):
+            cat = "temp"
+        elif "cache" in categories and ("dxcache" in rel or "glcache" in rel):
+            cat = "cache"
+        elif "installer" in categories and ("updater" in rel or "shell_cache" in rel):
+            cat = "installer"
+        elif "browser" in categories and "chrome" in rel:
+            cat = "browser"
+        else:
+            cat = "temp" if categories else "temp"
+
+        if cat not in categories:
+            continue
+
+        total = sum(
+            os.path.getsize(os.path.join(root, f))
+            for f in files if os.path.isfile(os.path.join(root, f))
+        )
+        if total == 0:
+            continue
+
+        risk = classify_risk(root)
+        risk_label = {
+            "safe": "安全的模拟文件，可放心删除",
+            "caution": "注意：模拟的应用数据文件",
+            "danger": "高风险：模拟的系统文件",
+        }.get(risk.value, "模拟文件")
+
+        counter += 1
+        items.append(ScanItem(
+            id=f"sbox_{counter}",
+            category=cat,
+            path=root,
+            size=total,
+            risk=risk,
+            risk_desc=f"[沙盒] {risk_label}",
+            item_count=len(files),
+        ))
+
+    return items
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
@@ -92,13 +151,31 @@ def api_translations():
 
 @app.route("/api/disk")
 def api_disk():
-    """Return C: drive disk usage information."""
+    """Return C: drive or sandbox disk usage information."""
+    global sandbox_enabled, sandbox_path
+    if sandbox_enabled and sandbox_path:
+        total = 0
+        for root, dirs, files in os.walk(sandbox_path):
+            for f in files:
+                try:
+                    total += os.path.getsize(os.path.join(root, f))
+                except OSError:
+                    pass
+        return jsonify({
+            "total": total,
+            "used": total,
+            "free": 0,
+            "percent": 100.0,
+            "sandbox": True,
+            "sandbox_path": sandbox_path,
+        })
     usage = psutil.disk_usage("C:/")
     return jsonify({
         "total": usage.total,
         "used": usage.used,
         "free": usage.free,
         "percent": usage.percent,
+        "sandbox": False,
     })
 
 
@@ -120,7 +197,11 @@ def api_scan_start():
     def _run_scan():
         global scan_results, scan_in_progress
         try:
-            scan_results = list(scan_engine.scan(categories))
+            if sandbox_enabled and sandbox_path:
+                # Sandbox mode: scan the sandbox directory
+                scan_results = _scan_sandbox(sandbox_path, categories)
+            else:
+                scan_results = list(scan_engine.scan(categories))
         finally:
             with scan_lock:
                 scan_in_progress = False
@@ -192,6 +273,104 @@ def api_processes():
 
     procs.sort(key=lambda x: x["memory_mb"], reverse=True)
     return jsonify(procs[:30])
+
+
+# ---------------------------------------------------------------------------
+# Sandbox mode
+# ---------------------------------------------------------------------------
+
+import tempfile, random, string
+
+SANDBOX_SIZE = 75 * 1024 * 1024  # 75 MB of dummy data
+
+
+def _create_sandbox_files(path: str):
+    """Populate a sandbox directory with realistic junk files."""
+    dirs = {
+        "Temp": 5,
+        "NVIDIA/DXCache": 1,
+        "NVIDIA/GLCache": 1,
+        "Google/Chrome/User Data/Default/Cache": 3,
+        "updater": 2,
+        "npm-cache": 4,
+        "pip/cache": 3,
+        "app_shell_cache": 1,
+    }
+    file_id = 0
+    for rel_dir, count in dirs.items():
+        full_dir = os.path.join(path, rel_dir)
+        os.makedirs(full_dir, exist_ok=True)
+        for _ in range(count):
+            size = random.randint(1, 15) * 1024 * 1024
+            ext = random.choice([".tmp", ".log", ".cache", ".exe", ".bin"])
+            fp = os.path.join(full_dir, f"sandbox_{file_id}{ext}")
+            with open(fp, "wb") as f:
+                f.write(os.urandom(size))
+            file_id += 1
+
+    # A "system" directory that should NOT be touched
+    sys_dir = os.path.join(path, "Windows", "System32")
+    os.makedirs(sys_dir, exist_ok=True)
+    with open(os.path.join(sys_dir, "kernel32.dll"), "w") as f:
+        f.write("SIMULATED SYSTEM FILE - DO NOT DELETE")
+
+    # Create a marker file
+    with open(os.path.join(path, "README.txt"), "w") as f:
+        f.write("这是 SysClean 沙盒环境，所有文件均为模拟数据，可安全删除。\n")
+        f.write("This is a SysClean sandbox. All files are simulated data.\n")
+
+
+@app.route("/api/sandbox/start", methods=["POST"])
+def api_sandbox_start():
+    """Create a sandbox environment with dummy files."""
+    global sandbox_enabled, sandbox_path, scan_results
+    if sandbox_enabled:
+        return jsonify({"error": "沙盒已激活，请先退出"}), 409
+
+    path = tempfile.mkdtemp(prefix="sysclean_sandbox_")
+    try:
+        _create_sandbox_files(path)
+        sandbox_enabled = True
+        sandbox_path = path
+        scan_results = []  # clear old results
+        return jsonify({
+            "status": "started",
+            "path": path,
+            "message": "沙盒模式已激活，所有操作均在隔离环境中进行",
+        })
+    except Exception as e:
+        import shutil
+        shutil.rmtree(path, ignore_errors=True)
+        return jsonify({"error": f"沙盒创建失败: {e}"}), 500
+
+
+@app.route("/api/sandbox/stop", methods=["POST"])
+def api_sandbox_stop():
+    """Remove the sandbox and return to normal mode."""
+    global sandbox_enabled, sandbox_path, scan_results
+    if not sandbox_enabled:
+        return jsonify({"error": "沙盒未激活"}), 400
+
+    path = sandbox_path
+    sandbox_enabled = False
+    sandbox_path = ""
+    scan_results = []
+
+    import shutil
+    shutil.rmtree(path, ignore_errors=True)
+    return jsonify({
+        "status": "stopped",
+        "message": "沙盒已清理，已返回正常模式",
+    })
+
+
+@app.route("/api/sandbox/status")
+def api_sandbox_status():
+    """Return whether sandbox mode is active."""
+    return jsonify({
+        "enabled": sandbox_enabled,
+        "path": sandbox_path if sandbox_enabled else "",
+    })
 
 
 # ---------------------------------------------------------------------------

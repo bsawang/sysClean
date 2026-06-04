@@ -49,6 +49,9 @@
       <h1 data-i18n="app.title">SysClean</h1>
     </div>
     <div class="header-right">
+      <span id="sandbox-badge" style="display:none;font-size:0.78rem;padding:2px 10px;border-radius:10px;background:rgba(210,153,34,0.15);color:#d29922;border:1px solid rgba(210,153,34,0.3);">
+        🛡️ <span data-i18n="sandbox.mode">沙盒模式</span>
+      </span>
       <span id="disk-info" style="font-size:0.82rem;color:#8b949e">
         <span data-i18n="app.os">Windows 10</span>
       </span>
@@ -137,6 +140,12 @@
         <div class="legend-item"><span class="legend-dot caution"></span><span data-i18n="risk.legend.caution">Review before cleaning</span></div>
         <div class="legend-item"><span class="legend-dot danger"></span><span data-i18n="risk.legend.danger">Proceed with care</span></div>
       </div>
+      <!-- Sandbox toggle -->
+      <hr style="border:none;border-top:1px solid #21262d;margin:14px 0;">
+      <button class="btn btn-ghost btn-sm" id="btn-sandbox" onclick="toggleSandbox()" style="width:100%;font-size:0.82rem;">
+        🛡️ <span data-i18n="sandbox.enter">沙盒体验模式</span>
+      </button>
+      <div id="sandbox-status" style="font-size:0.72rem;color:#8b949e;margin-top:4px;text-align:center;"></div>
 
     </aside>
 
@@ -454,16 +463,22 @@ function renderDiskCardHtml(data) {
   var cls = 'safe';
   if (pct >= 90) cls = 'danger';
   else if (pct >= 75) cls = 'warning';
+  var sandboxBadge = '';
+  var titleKey = 'disk.title';
+  if (data.sandbox) {
+    sandboxBadge = '<div style="font-size:0.72rem;color:#d29922;margin-top:6px;text-align:center;">\u{1F6FE} ' + _t('sandbox.mode') + '</div>';
+    titleKey = 'sandbox.mode';
+  }
   return '<div class="disk-card">'
     + '<div class="disk-header">'
-    + '<span class="disk-label" data-i18n="disk.title">' + _t('disk.title') + '</span>'
+    + '<span class="disk-label">' + _t(titleKey) + '</span>'
     + '<span class="disk-percent ' + cls + '">' + pct + '%</span>'
     + '</div>'
     + '<div class="disk-bar"><div class="disk-fill ' + cls + '" style="width:' + pct + '%"></div></div>'
     + '<div class="disk-info">'
     + '<span>' + _t('disk.used') + ': ' + usedGB + ' GB / ' + totalGB + ' GB</span>'
     + '<span>' + _t('disk.free') + ': ' + freeGB + ' GB</span>'
-    + '</div></div>';
+    + '</div>' + sandboxBadge + '</div>';
 }
 
 // ====================================================================
@@ -936,6 +951,66 @@ function escapeHtml(str) {
 }
 
 // ====================================================================
+// Sandbox Mode
+// ====================================================================
+async function toggleSandbox() {
+  var btn = document.getElementById('btn-sandbox');
+  var status = document.getElementById('sandbox-status');
+  var badge = document.getElementById('sandbox-badge');
+  btn.disabled = true;
+
+  try {
+    // Check current sandbox status
+    var s = await fetch('/api/sandbox/status');
+    var statusData = await s.json();
+
+    if (statusData.enabled) {
+      // Exit sandbox
+      var r = await fetch('/api/sandbox/stop', {method:'POST'});
+      var d = await r.json();
+      if (d.status === 'stopped') {
+        badge.style.display = 'none';
+        status.textContent = '';
+        btn.innerHTML = '🛡️ <span data-i18n="sandbox.enter">沙盒体验模式</span>';
+        // Reload disk info and results
+        htmx.trigger('#disk-card', 'htmx:load');
+        document.getElementById('view-results').classList.add('hidden');
+        showView('empty');
+      }
+    } else {
+      // Enter sandbox
+      var r = await fetch('/api/sandbox/start', {method:'POST'});
+      var d = await r.json();
+      if (d.status === 'started') {
+        badge.style.display = 'inline';
+        status.textContent = d.path.split('\\').pop();
+        btn.innerHTML = '🛡️ <span data-i18n="sandbox.exit">退出沙盒模式</span>';
+        // Reload disk info
+        htmx.trigger('#disk-card', 'htmx:load');
+        document.getElementById('view-results').classList.add('hidden');
+        showView('empty');
+      }
+    }
+  } catch(e) {
+    status.textContent = 'Error: ' + e.message;
+  }
+  btn.disabled = false;
+}
+
+// Check sandbox status on page load
+async function checkSandbox() {
+  try {
+    var r = await fetch('/api/sandbox/status');
+    var d = await r.json();
+    if (d.enabled) {
+      document.getElementById('sandbox-badge').style.display = 'inline';
+      document.getElementById('sandbox-status').textContent = d.path.split('\\').pop();
+      document.getElementById('btn-sandbox').innerHTML = '🛡️ <span data-i18n="sandbox.exit">退出沙盒模式</span>';
+    }
+  } catch(e) {}
+}
+
+// ====================================================================
 // Initialization
 // ====================================================================
 document.addEventListener('DOMContentLoaded', function() {
@@ -946,6 +1021,9 @@ document.addEventListener('DOMContentLoaded', function() {
   fetch('/api/disk').then(function(r) { return r.json(); }).then(function(data) {
     diskBefore = data;
   }).catch(function() {});
+
+  // Check if sandbox is active
+  checkSandbox();
 
   // Show empty view by default
   showView('empty');
