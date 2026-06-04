@@ -197,6 +197,21 @@
         <div class="legend-item"><span class="legend-dot caution"></span><span data-i18n="risk.legend.caution">Review before cleaning</span></div>
         <div class="legend-item"><span class="legend-dot danger"></span><span data-i18n="risk.legend.danger">Proceed with care</span></div>
       </div>
+      <!-- Recycle Bin -->
+      <hr style="border:none;border-top:1px solid #21262d;margin:14px 0;">
+      <div id="recycle-section">
+        <div style="display:flex;align-items:center;gap:6px;font-size:0.82rem;color:#8b949e;margin-bottom:6px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          <span data-i18n="recycle.title">Recycle Bin</span>
+          <span id="recycle-size" style="margin-left:auto;font-size:0.78rem;color:#d29922">-</span>
+        </div>
+        <button class="btn btn-ghost btn-sm btn-operation" onclick="emptyRecycleBin()" style="width:100%;font-size:0.82rem;" id="btn-empty-recycle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span data-i18n="recycle.empty">Empty Recycle Bin</span>
+        </button>
+      </div>
       <!-- Sandbox toggle -->
       <hr style="border:none;border-top:1px solid #21262d;margin:14px 0;">
       <button class="btn btn-ghost btn-sm" id="btn-sandbox" onclick="toggleSandbox()" style="width:100%;font-size:0.82rem;">
@@ -435,6 +450,19 @@
         <div id="complete-items" style="max-width:500px;margin:0 auto 20px;text-align:left;border:1px solid #21262d;border-radius:8px;overflow:hidden;max-height:200px;overflow-y:auto">
         </div>
 
+        <!-- Suggested follow-up actions -->
+        <div id="complete-hints" style="max-width:500px;margin:0 auto 20px;text-align:left;border:1px solid #21262d;border-radius:8px;padding:12px;background:#161b22">
+          <div style="font-size:0.82rem;font-weight:600;color:#8b949e;margin-bottom:8px" data-i18n="complete.hints.title">💡 Suggested Follow-up</div>
+          <div id="hint-recycle" style="display:flex;align-items:center;gap:8px;font-size:0.82rem;padding:6px 0;border-bottom:1px solid #21262d">
+            <span>🗑️ <span data-i18n="recycle.title">Recycle Bin</span>: <span id="hint-recycle-size" class="hint-value">-</span></span>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-empty-recycle').click()" style="margin-left:auto;font-size:0.78rem" data-i18n="complete.hints.goto">Go</button>
+          </div>
+          <div id="hint-search" style="display:flex;align-items:center;gap:8px;font-size:0.82rem;padding:6px 0">
+            <span>🔍 <span data-i18n="search.title">Search Index</span>: <span id="hint-search-size" class="hint-value">-</span></span>
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('btn-rebuild-index').click()" style="margin-left:auto;font-size:0.78rem" data-i18n="complete.hints.goto">Go</button>
+          </div>
+        </div>
+
         <!-- Back to Home button -->
         <button class="btn btn-ghost" onclick="goHome()">
           <span data-i18n="btn.back_home">&larr; Back to Home</span>
@@ -540,6 +568,49 @@ function updateAdminHints(admin) {
     document.querySelectorAll('.admin-hint').forEach(function(el) {
         el.style.display = admin ? 'none' : 'inline';
     });
+}
+
+// ====================================================================
+// Recycle Bin
+// ====================================================================
+function refreshRecycleStatus() {
+    fetch('/api/recycle/status')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            document.getElementById('recycle-size').textContent = d.size_fmt;
+        });
+}
+
+function emptyRecycleBin() {
+    if (isBusy) { alert(BUSY_MSG); return; }
+    if (!confirm(_t('recycle.confirm'))) return;
+    startBusyPolling();
+    var btn = document.getElementById('btn-empty-recycle');
+    btn.disabled = true;
+    fetch('/api/recycle/empty', { method: 'POST' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            if (d.status === 'emptied') {
+                refreshRecycleStatus();
+            } else {
+                alert(d.error || 'Failed');
+            }
+        })
+        .catch(function() { alert('Failed to empty Recycle Bin'); })
+        .finally(function() { btn.disabled = false; });
+}
+
+function refreshCompleteHints() {
+    fetch('/api/recycle/status')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            document.getElementById('hint-recycle-size').textContent = d.size_fmt;
+        });
+    fetch('/api/search/status')
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            document.getElementById('hint-search-size').textContent = d.size_fmt;
+        });
 }
 
 // ====================================================================
@@ -1083,6 +1154,7 @@ function showComplete(data) {
       renderDiskCompare(diskAfter, diskAfter);
     }
   }).catch(function(e) { console.error('refreshDiskCard:', e); });
+  refreshCompleteHints();
 }
 
 function renderCleanDetailList() {
@@ -1264,6 +1336,7 @@ document.addEventListener('DOMContentLoaded', function() {
   checkSandbox();
   checkBusy();
   refreshDiskCard();
+  refreshRecycleStatus();
 
   // Restore previous state if available
   if (!restoreState()) {
