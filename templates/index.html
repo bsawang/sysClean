@@ -441,8 +441,8 @@ function riskTag(risk) {
 // ====================================================================
 // Global operation state (isBusy)
 // ====================================================================
-let isBusy = false;
-let busyPollInterval = null;
+var isBusy = false;
+var busyPollInterval = null;
 const BUSY_MSG = '当前有操作进行中，请等待完成';
 
 function startBusyPolling() {
@@ -573,6 +573,8 @@ function updateSteps(activeStep) {
 // Scan flow: startScan
 // ====================================================================
 function startScan() {
+  if (isBusy) { alert(BUSY_MSG); return; }
+  startBusyPolling();
   var checked = document.querySelectorAll('.cat-item input:checked');
   if (checked.length === 0) {
     alert(_t('scan.select_category'));
@@ -814,6 +816,7 @@ function sandboxExitToResults() {
 // Confirm clean
 // ====================================================================
 function confirmClean() {
+  if (isBusy) { alert(BUSY_MSG); return; }
   var selected = getSelectedItems();
   if (selected.length === 0) {
     alert(_t('clean.select_none'));
