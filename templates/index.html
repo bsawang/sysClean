@@ -471,7 +471,7 @@ function renderDiskCardHtml(data) {
   else if (pct >= 75) cls = 'warning';
   var sandboxBadge = '';
   if (data.sandbox) {
-    sandboxBadge = '<div style="font-size:0.72rem;color:#d29922;margin-top:6px;text-align:center;">🛾 <span data-i18n="sandbox.mode">Sandbox Mode</span></div>';
+    sandboxBadge = '<div style="font-size:0.72rem;color:#d29922;margin-top:6px;text-align:center;">🛡 <span data-i18n="sandbox.mode">Sandbox Mode</span></div>';
   }
   return '<div class="disk-card">'
     + '<div class="disk-header">'
@@ -764,14 +764,14 @@ function confirmClean() {
       document.getElementById('confirm-count').innerHTML =
         '<div style="text-align:center;padding:16px 0">'
         + '<div style="font-size:2.5rem;margin-bottom:8px">\u{1F6E1}️</div>'
-        + '<div style="font-size:1.1rem;font-weight:600;margin-bottom:4px">' + _t('sandbox.mode') + '</div>'
+        + '<div style="font-size:1.1rem;font-weight:600;margin-bottom:4px">' + _t('sandbox.blocked') + '</div>'
         + '<div style="font-size:0.85rem;color:#d29922">' + _t('sandbox.no_clean') + '</div>'
         + '</div>';
       document.getElementById('confirm-summary').innerHTML = '';
       document.getElementById('modal-warning-box').style.display = 'none';
       document.getElementById('confirm-actions').innerHTML =
         '<button class="btn btn-ghost" onclick="showView(\'results\')">' + _t('btn.cancel') + '</button>'
-        + '<button class="btn btn-primary" onclick="toggleSandbox()" style="background:#d29922">🛾 ' + _t('sandbox.exit') + '</button>';
+        + '<button class="btn btn-primary" onclick="toggleSandbox()" style="background:#d29922">🛡 ' + _t('sandbox.exit') + '</button>';
       showView('confirm');
     } else {
       var groups = {};
