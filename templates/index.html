@@ -515,13 +515,12 @@
           🔒 <span data-i18n="software.admin_warn">Some programs require admin privileges to uninstall</span>
         </div>
 
-        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-shrink:0">
-          <input type="text" id="software-filter" oninput="filterSoftware()" placeholder="Filter..." style="flex:1;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;color:#c9d1d9;font-size:0.88rem">
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-shrink:0;flex-wrap:wrap">
+          <input type="text" id="software-filter" oninput="filterSoftware()" placeholder="Filter..." style="flex:1;min-width:120px;background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;color:#c9d1d9;font-size:0.88rem">
+          <div id="drive-filter" style="display:flex;gap:4px;flex-wrap:wrap"></div>
           <button class="btn btn-ghost btn-sm" onclick="sortSoftware('date')" style="font-size:0.78rem;white-space:nowrap" id="sort-date"><span data-i18n="software.sort_date">安装日期</span> ↓</button>
           <button class="btn btn-ghost btn-sm" onclick="sortSoftware('size')" style="font-size:0.78rem;white-space:nowrap" id="sort-size"><span data-i18n="software.sort_size">大小</span> ↓</button>
         </div>
-
-        <div id="drive-filter" style="display:flex;gap:4px;margin-bottom:8px;flex-shrink:0;flex-wrap:wrap;min-height:0"></div>
 
         <div id="software-loading" style="text-align:center;padding:32px;color:#8b949e" data-i18n="software.loading">Loading...</div>
 
@@ -1515,6 +1514,7 @@ function showSoftwareView() {
             adminWarn.style.display = d.admin ? 'none' : '';
 
             // Build drive filter
+            // Build drive filter
             var drives = {};
             allPrograms.forEach(function(p) {
                 if (p.install_location) {
@@ -1525,22 +1525,20 @@ function showSoftwareView() {
             var dfEl = document.getElementById('drive-filter');
             var dKeys = Object.keys(drives).sort();
             dfEl.innerHTML = '';
-            if (dKeys.length > 1) {
-                var allBtn = document.createElement('button');
-                allBtn.className = 'btn btn-ghost btn-sm' + (window._driveFilter === undefined ? ' active' : '');
-                allBtn.style.cssText = 'font-size:0.72rem;padding:2px 8px';
-                allBtn.textContent = 'All';
-                allBtn.onclick = function() { window._driveFilter = undefined; updateDriveFilter(); };
-                dfEl.appendChild(allBtn);
-                dKeys.forEach(function(d) {
-                    var btn = document.createElement('button');
-                    btn.className = 'btn btn-ghost btn-sm' + (window._driveFilter === d ? ' active' : '');
-                    btn.style.cssText = 'font-size:0.72rem;padding:2px 8px';
-                    btn.textContent = d + ': ' + drives[d];
-                    btn.onclick = function() { window._driveFilter = (window._driveFilter === d) ? undefined : d; updateDriveFilter(); };
-                    dfEl.appendChild(btn);
-                });
-            }
+            var allBtn = document.createElement('button');
+            allBtn.className = 'btn btn-ghost btn-sm' + (window._driveFilter === undefined ? ' active' : '');
+            allBtn.style.cssText = 'font-size:0.72rem;padding:2px 8px';
+            allBtn.textContent = 'All';
+            allBtn.onclick = function() { window._driveFilter = undefined; updateDriveFilter(); };
+            dfEl.appendChild(allBtn);
+            dKeys.forEach(function(d) {
+                var btn = document.createElement('button');
+                btn.className = 'btn btn-ghost btn-sm' + (window._driveFilter === d ? ' active' : '');
+                btn.style.cssText = 'font-size:0.72rem;padding:2px 8px';
+                btn.textContent = d + ': ' + drives[d];
+                btn.onclick = function() { window._driveFilter = (window._driveFilter === d) ? undefined : d; updateDriveFilter(); };
+                dfEl.appendChild(btn);
+            });
             renderSoftwareList(getFilteredSoftware());
         });
 }
