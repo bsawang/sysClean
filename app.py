@@ -8,7 +8,9 @@ and process listing with i18n support.
 
 import json
 import os
+import subprocess
 import threading
+import winreg
 from pathlib import Path
 
 import ctypes
@@ -485,6 +487,178 @@ def api_search_rebuild():
     t = threading.Thread(target=_rebuild, daemon=True)
     t.start()
     return jsonify({"status": "rebuilding"})
+
+
+# ---------------------------------------------------------------------------
+# Software Uninstall API
+# ---------------------------------------------------------------------------
+
+
+def _read_registered_programs():
+    """Read installed programs from Windows registry.
+
+    Returns:
+        List of dicts with keys: name, version, publisher, install_date,
+        estimated_size, uninstall_string, source.
+    """
+    programs = []
+    seen = set()
+
+    registry_paths = [
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
+        (winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
+        (winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
+    ]
+
+    for hkey, subkey in registry_paths:
+        try:
+            key = winreg.OpenKey(hkey, subkey, 0, winreg.KEY_READ)
+            for i in range(winreg.QueryInfoKey(key)[0]):
+                try:
+                    sub_name = winreg.EnumKey(key, i)
+                    sub_key = winreg.OpenKey(key, sub_name)
+                    try:
+                        name, _ = winreg.QueryValueEx(sub_key, "DisplayName")
+                    except OSError:
+                        continue
+
+                    # Dedup by display name
+                    if name in seen:
+                        continue
+                    seen.add(name)
+
+                    def _read_str(k, field):
+                        try:
+                            v, _ = winreg.QueryValueEx(k, field)
+                            return str(v)
+                        except (OSError, ValueError):
+                            return ""
+
+                    def _read_int(k, field):
+                        try:
+                            v, _ = winreg.QueryValueEx(k, field)
+                            return int(v)
+                        except (OSError, ValueError):
+                            return 0
+
+                    programs.append({
+                        "name": name,
+                        "version": _read_str(sub_key, "DisplayVersion"),
+                        "publisher": _read_str(sub_key, "Publisher"),
+                        "install_date": _read_str(sub_key, "InstallDate"),
+                        "estimated_size": _read_int(sub_key, "EstimatedSize") * 1024,  # KB → bytes
+                        "uninstall_string": _read_str(sub_key, "UninstallString"),
+                        "source": "registry",
+                    })
+                    winreg.CloseKey(sub_key)
+                except OSError:
+                    continue
+            winreg.CloseKey(key)
+        except OSError:
+            continue
+
+    return programs
+
+
+@app.route("/api/uninstall/list")
+def api_uninstall_list():
+    """Return a list of installed programs."""
+    programs = _read_registered_programs()
+    programs.sort(key=lambda p: p["name"].lower())
+
+    for p in programs:
+        p["size_fmt"] = _format_size(p["estimated_size"]) if p["estimated_size"] > 0 else ""
+
+    return jsonify({
+        "programs": programs,
+        "total": len(programs),
+        "admin": is_admin(),
+    })
+
+
+@app.route("/api/uninstall/start", methods=["POST"])
+def api_uninstall_start():
+    """Start serial uninstall of selected programs via SSE."""
+    data = request.get_json(force=True)
+    names = data.get("names")
+
+    if not names or not isinstance(names, list):
+        return jsonify({"error": "names must be a non-empty list"}), 400
+
+    if not acquire_operation("uninstalling"):
+        return jsonify({"error": "另一个操作正在进行中"}), 409
+
+    def _get_uninstall_string(name):
+        for p in _read_registered_programs():
+            if p["name"] == name:
+                return p["uninstall_string"]
+        return ""
+
+    def generate():
+        try:
+            total = len(names)
+            for i, name in enumerate(names):
+                # Emit progress
+                yield {
+                    "type": "uninstall_progress",
+                    "current": name,
+                    "completed": i,
+                    "total": total,
+                }
+
+                ustr = _get_uninstall_string(name)
+                if not ustr:
+                    yield {
+                        "type": "uninstall_result",
+                        "name": name,
+                        "success": False,
+                        "reason": "No uninstall string found",
+                    }
+                    continue
+
+                try:
+                    proc = subprocess.run(
+                        ustr,
+                        shell=True,
+                        capture_output=True,
+                        text=True,
+                        timeout=120,
+                    )
+                    success = proc.returncode == 0
+                    yield {
+                        "type": "uninstall_result",
+                        "name": name,
+                        "success": success,
+                        "reason": "" if success else f"Exit code: {proc.returncode}",
+                    }
+                except subprocess.TimeoutExpired:
+                    yield {
+                        "type": "uninstall_result",
+                        "name": name,
+                        "success": False,
+                        "reason": "Timeout (120s)",
+                    }
+                except Exception as exc:
+                    yield {
+                        "type": "uninstall_result",
+                        "name": name,
+                        "success": False,
+                        "reason": str(exc),
+                    }
+
+            yield {
+                "type": "uninstall_complete",
+                "total": total,
+                "completed": total,
+            }
+        finally:
+            release_operation()
+
+    def generate_sse():
+        for event in generate():
+            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+    return Response(generate_sse(), mimetype="text/event-stream")
 
 
 # ---------------------------------------------------------------------------
