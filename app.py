@@ -199,6 +199,6 @@ def api_processes():
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    print("🧹 SysClean 启动中...")
-    print("   访问 http://localhost:5000 打开清理工具")
+    print("[SysClean] Starting...")
+    print("   Visit http://localhost:5000")
     app.run(host="127.0.0.1", port=5000, debug=True)
