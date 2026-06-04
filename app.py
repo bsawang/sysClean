@@ -10,7 +10,9 @@ import json
 import os
 import threading
 
+import ctypes
 import psutil
+from typing import Optional
 from flask import Flask, render_template, request, Response, jsonify, g
 
 from scanner import ScannerEngine, ScanItem, RiskLevel
@@ -26,6 +28,48 @@ except ImportError:
 
     def get_all_texts(lang="zh"):
         return {}
+
+# ---------------------------------------------------------------------------
+# Global operation state machine — prevents concurrent operations
+# ---------------------------------------------------------------------------
+_operation_lock = threading.Lock()
+_operation_state: Optional[str] = None  # None | "scanning" | "cleaning" | "uninstalling" | "emptying_recycle" | "rebuilding_index"
+
+
+def acquire_operation(op_name: str) -> bool:
+    """Attempt to acquire the global operation lock.
+
+    Returns True if acquired, False if another operation is in progress.
+    """
+    global _operation_state
+    with _operation_lock:
+        if _operation_state is not None:
+            return False
+        _operation_state = op_name
+        return True
+
+
+def release_operation():
+    """Release the global operation lock."""
+    global _operation_state
+    with _operation_lock:
+        _operation_state = None
+
+
+def get_operation_state() -> Optional[str]:
+    """Return current operation state without acquiring the lock."""
+    global _operation_state
+    with _operation_lock:
+        return _operation_state
+
+
+def is_admin() -> bool:
+    """Check if the current process is running with administrator privileges."""
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+    except Exception:
+        return False
+
 
 app = Flask(__name__)
 
@@ -108,9 +152,20 @@ def api_disk():
     })
 
 
+@app.route("/api/operation/status")
+def api_operation_status():
+    """Return whether an operation is in progress and its type."""
+    state = get_operation_state()
+    return jsonify({
+        "busy": state is not None,
+        "operation": state,
+        "admin": is_admin(),
+    })
+
+
 @app.route("/api/scan/start", methods=["POST"])
 def api_scan_start():
-    """Start a scan in a background thread and return immediately."""
+    """Start a scan in a background thread, guarded by global operation lock."""
     global scan_in_progress
     data = request.get_json(force=True)
     categories = data.get("categories")
@@ -118,8 +173,12 @@ def api_scan_start():
     if not categories or not isinstance(categories, list):
         return jsonify({"error": "categories must be a non-empty list"}), 400
 
+    if not acquire_operation("scanning"):
+        return jsonify({"error": "另一个操作正在进行中"}), 409
+
     with scan_lock:
         if scan_in_progress:
+            release_operation()
             return jsonify({"error": "扫描正在进行中"}), 409
         scan_in_progress = True
 
@@ -130,6 +189,7 @@ def api_scan_start():
         finally:
             with scan_lock:
                 scan_in_progress = False
+            release_operation()
 
     t = threading.Thread(target=_run_scan, daemon=True)
     t.start()
