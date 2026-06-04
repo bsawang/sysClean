@@ -50,7 +50,7 @@
     </div>
     <div class="header-right">
       <span id="sandbox-badge" style="display:none;font-size:0.78rem;padding:2px 10px;border-radius:10px;background:rgba(210,153,34,0.15);color:#d29922;border:1px solid rgba(210,153,34,0.3);">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/></svg> <span data-i18n="sandbox.mode">沙盒模式</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> <span data-i18n="sandbox.mode">沙盒模式</span>
       </span>
       <span id="disk-info" style="font-size:0.82rem;color:#8b949e">
         <span data-i18n="app.os">Windows 10</span>
@@ -139,7 +139,7 @@
       <!-- Sandbox toggle -->
       <hr style="border:none;border-top:1px solid #21262d;margin:14px 0;">
       <button class="btn btn-ghost btn-sm" id="btn-sandbox" onclick="toggleSandbox()" style="width:100%;font-size:0.82rem;">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/></svg> <span data-i18n="sandbox.enter">沙盒体验模式</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> <span data-i18n="sandbox.enter">沙盒体验模式</span>
       </button>
       <div id="sandbox-status" style="font-size:0.72rem;color:#8b949e;margin-top:4px;text-align:center;"></div>
 
@@ -471,7 +471,7 @@ function renderDiskCardHtml(data) {
   else if (pct >= 75) cls = 'warning';
   var sandboxBadge = '';
   if (data.sandbox) {
-    sandboxBadge = '<div style="font-size:0.72rem;color:#d29922;margin-top:6px;text-align:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/></svg> <span data-i18n="sandbox.mode">Sandbox Mode</span></div>';
+    sandboxBadge = '<div style="font-size:0.72rem;color:#d29922;margin-top:6px;text-align:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> <span data-i18n="sandbox.mode">Sandbox Mode</span></div>';
   }
   return '<div class="disk-card">'
     + '<div class="disk-header">'
@@ -1034,7 +1034,7 @@ async function toggleSandbox() {
       if (d.status === 'stopped') {
         badge.style.display = 'none';
         status.textContent = '';
-        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/></svg> <span data-i18n="sandbox.enter">沙盒体验模式</span>';
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> <span data-i18n="sandbox.enter">沙盒体验模式</span>';
         // Reload disk info and results
         refreshDiskCard();
       }
@@ -1045,7 +1045,7 @@ async function toggleSandbox() {
       if (d.status === 'started') {
         badge.style.display = 'inline';
         status.textContent = _t('sandbox.active');
-        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/></svg> <span data-i18n="sandbox.exit">退出沙盒模式</span>';
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> <span data-i18n="sandbox.exit">退出沙盒模式</span>';
         // Reload disk info
         refreshDiskCard();
       }
@@ -1064,7 +1064,7 @@ async function checkSandbox() {
     if (d.enabled) {
       document.getElementById('sandbox-badge').style.display = 'inline';
       document.getElementById('sandbox-status').textContent = '️ ' + _t('sandbox.active');
-      document.getElementById('btn-sandbox').innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><line x1="2" y1="12" x2="22" y2="12"/></svg> <span data-i18n="sandbox.exit">退出沙盒模式</span>';
+      document.getElementById('btn-sandbox').innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> <span data-i18n="sandbox.exit">退出沙盒模式</span>';
     }
   } catch(e) {}
 }
