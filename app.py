@@ -633,7 +633,6 @@ def _read_registered_programs():
                         "install_type": install_type,
                         "estimated_size": est_size,
                         "uninstall_string": ustr,
-                        "display_icon": _read_str(sub_key, "DisplayIcon"),
                         "source": "registry",
                     })
         finally:
@@ -743,12 +742,16 @@ def api_uninstall_start():
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    if not is_admin():
-        import sys
-        import ctypes.wintypes
-        print("[SysClean] Not running as admin, relaunching with admin privileges...")
-        ctypes.windll.shell32.ShellExecuteW(
-            None, "runas", sys.executable, " ".join(sys.argv), None, 1
+    if not is_admin() and "--elevated" not in sys.argv:
+        import subprocess
+        print("[SysClean] Not running as admin, relaunching silently...")
+        args = [sys.executable] + sys.argv + ["--elevated"]
+        subprocess.run(
+            ["powershell", "-Command",
+             "Start-Process", sys.executable,
+             "-ArgumentList", "'" + " ".join(sys.argv) + " --elevated'",
+             "-Verb", "RunAs", "-WindowStyle", "Hidden"],
+            capture_output=True
         )
         sys.exit(0)
 

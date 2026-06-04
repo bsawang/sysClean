@@ -1519,13 +1519,12 @@ function showSoftwareView() {
 function renderSoftwareList(programs) {
     var html = '';
     programs.forEach(function(p) {
-        var iconHtml = '';
-    if (p.display_icon) {
-        iconHtml = '<img src="' + escapeHtml(p.display_icon) + '" style="width:20px;height:20px;flex-shrink:0" onerror="this.style.display=\'none\'" alt="">';
-    }
+        var colors = ['#58a6ff','#d29922','#f85149','#3fb950','#bc8cff','#f0883e','#79c0ff','#ff7b72'];
+    var cIdx = p.name.charCodeAt(0) % colors.length;
+    var avatar = '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;background:' + colors[cIdx] + '20;color:' + colors[cIdx] + ';font-size:0.78rem;font-weight:700;flex-shrink:0">' + escapeHtml(p.name.charAt(0).toUpperCase()) + '</span>';
     html += '<div class="result-item soft-item" style="border-bottom:1px solid #21262d" onclick="toggleSoftwareCb(this)" data-checked="0">'
             + '<input type="checkbox" class="software-cb" data-name="' + escapeHtml(p.name) + '">'
-            + iconHtml
+            + avatar
             + '<div style="flex:1;min-width:0;margin-left:6px">'
             + '<div style="display:flex;align-items:baseline;gap:8px">'
             + '<div style="flex:1;font-size:0.92rem;font-weight:600;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
