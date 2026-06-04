@@ -963,11 +963,9 @@ function showComplete(data) {
   document.getElementById('complete-time').textContent = (data.elapsed || '0.0') + 's';
 
   // Render cleaned items detail list
-  var listEl = document.getElementById('complete-items');
-  var listHtml = '';
-  if (data.items && data.items.length > 0) {
-    listHtml += '<div style="padding:8px 12px;background:#161b22;font-size:0.78rem;color:#8b949e;border-bottom:1px solid #21262d">' + _t('complete.detail') + '</div>';
-    data.items.forEach(function(item) {
+  window._cleanItems = data.items || [];
+  window._cleanSortAsc = false;
+  renderCleanDetailList();
       var icon = item.success
         ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 10"/></svg>'
         : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f85149" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
@@ -990,6 +988,37 @@ function showComplete(data) {
       renderDiskCompare(diskAfter, diskAfter);
     }
   }).catch(function(e) { console.error('refreshDiskCard:', e); });
+}
+
+function renderCleanDetailList() {
+  var items = window._cleanItems || [];
+  var listEl = document.getElementById('complete-items');
+  if (!items.length) { listEl.innerHTML = ''; return; }
+  var sorted = items.slice().sort(function(a, b) {
+    return window._cleanSortAsc ? a.size - b.size : b.size - a.size;
+  });
+  var btnLabel = window._cleanSortAsc ? '\u2191' : '\u2193';
+  var html = '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#161b22;font-size:0.78rem;color:#8b949e;border-bottom:1px solid #21262d">'
+    + '<span>' + _t('complete.detail') + '</span>'
+    + '<button onclick="toggleCleanSort()" style="background:none;border:1px solid #30363d;color:#8b949e;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.78rem">' + btnLabel + ' ' + _t('complete.sort') + '</button>'
+    + '</div>';
+  sorted.forEach(function(item) {
+    var icon = item.success
+      ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3fb950" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 10"/></svg>'
+      : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f85149" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+    html += '<div style="display:flex;align-items:center;padding:6px 12px;gap:8px;font-size:0.82rem;border-bottom:1px solid #21262d">'
+      + icon
+      + '<span class="mono" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#8b949e">' + escapeHtml(item.path) + '</span>'
+      + '<span style="color:' + (item.success ? '#3fb950' : '#f85149') + ';white-space:nowrap">'
+      + (item.success ? formatSize(item.size) : _t('clean.failed') + (item.reason ? ' - ' + escapeHtml(item.reason) : ''))
+      + '</span></div>';
+  });
+  listEl.innerHTML = html;
+}
+
+function toggleCleanSort() {
+  window._cleanSortAsc = !window._cleanSortAsc;
+  renderCleanDetailList();
 }
 
 function renderDiskCompare(before, after) {
