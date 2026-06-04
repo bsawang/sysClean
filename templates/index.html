@@ -580,7 +580,17 @@ function switchLang(lang) {
   var url = new URL(window.location);
   url.searchParams.set('lang', lang);
   window.history.replaceState({}, '', url.toString());
-  loadTranslations(lang);
+  loadTranslations(lang).then(function() {
+    // Re-render dynamic views after language switch
+    var curView = document.querySelector('#view-software.hidden') === null ? 'software'
+               : document.querySelector('#view-results.hidden') === null ? 'results' : null;
+    if (curView === 'results' && typeof scanItems !== 'undefined' && scanItems.length > 0) {
+      renderResults({ items: scanItems, total: scanItems.length });
+    }
+    if (curView === 'software' && typeof allPrograms !== 'undefined' && allPrograms.length > 0) {
+      renderSoftwareList(getFilteredSoftware());
+    }
+  });
 }
 
 // ====================================================================
