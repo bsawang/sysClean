@@ -603,6 +603,14 @@ def _read_registered_programs():
                         except Exception:
                             pass
 
+                    ustr = _read_str(sub_key, "UninstallString")
+                    # Detect install type
+                    try:
+                        is_msi = _read_int(sub_key, "WindowsInstaller") == 1
+                    except Exception:
+                        is_msi = "msiexec" in ustr.lower()
+                    install_type = "MSI" if is_msi else "Win32"
+
                     programs.append({
                         "name": name,
                         "version": _read_str(sub_key, "DisplayVersion"),
@@ -610,8 +618,9 @@ def _read_registered_programs():
                         "install_date": _read_str(sub_key, "InstallDate"),
                         "install_location": install_path,
                         "last_used": last_used,
+                        "install_type": install_type,
                         "estimated_size": _read_int(sub_key, "EstimatedSize") * 1024,  # KB → bytes
-                        "uninstall_string": _read_str(sub_key, "UninstallString"),
+                        "uninstall_string": ustr,
                         "source": "registry",
                     })
         finally:

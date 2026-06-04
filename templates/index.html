@@ -1517,6 +1517,7 @@ function renderSoftwareList(programs) {
             + '<div style="display:flex;align-items:baseline;gap:8px">'
             + '<div style="flex:1;font-size:0.92rem;font-weight:600;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
             + escapeHtml(p.name)
+            + (p.install_type ? ' <span style="display:inline-block;font-size:0.65rem;font-weight:500;padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:middle;' + (p.install_type === 'MSI' ? 'background:rgba(88,166,255,0.12);color:#58a6ff' : 'background:rgba(139,148,158,0.12);color:#8b949e') + '">' + escapeHtml(p.install_type) + '</span>' : '')
             + (p.publisher ? ' <span style="font-weight:400;font-size:0.78rem;color:#8b949e">· ' + escapeHtml(p.publisher) + '</span>' : '')
             + (p.version ? ' <span style="font-weight:400;font-size:0.78rem;color:#6e7681">· ' + escapeHtml(p.version) + '</span>' : '')
             + (p.install_date ? ' <span style="font-weight:400;font-size:0.78rem;color:#6e7681">· ' + escapeHtml(p.install_date) + '</span>' : '')
