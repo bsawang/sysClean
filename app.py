@@ -806,11 +806,13 @@ def api_uninstall_start():
                     continue
 
                 try:
+                    # Use DEVNULL to avoid GUI uninstallers hanging on pipe handles
                     proc = subprocess.run(
                         ustr,
                         shell=True,
-                        capture_output=True,
-                        text=True,
+                        capture_output=False,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
                         timeout=120,
                     )
                     success = proc.returncode == 0
@@ -834,6 +836,10 @@ def api_uninstall_start():
                         "success": False,
                         "reason": str(exc),
                     }
+
+                # Small delay between uninstalls (allow MSI transactions to settle)
+                import time
+                time.sleep(2)
 
             yield {
                 "type": "uninstall_complete",
