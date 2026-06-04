@@ -1514,8 +1514,13 @@ function renderSoftwareList(programs) {
         html += '<div class="result-item" style="border-bottom:1px solid #21262d">'
             + '<input type="checkbox" class="software-cb" data-name="' + escapeHtml(p.name) + '" checked>'
             + '<div style="flex:1;min-width:0;margin-left:8px">'
-            + '<div style="display:flex;align-items:center;gap:8px">'
-            + '<div style="flex:1;font-size:0.92rem;font-weight:600;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escapeHtml(p.name) + '</div>'
+            + '<div style="display:flex;align-items:baseline;gap:8px">'
+            + '<div style="flex:1;font-size:0.92rem;font-weight:600;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+            + escapeHtml(p.name)
+            + (p.publisher ? ' <span style="font-weight:400;font-size:0.78rem;color:#8b949e">· ' + escapeHtml(p.publisher) + '</span>' : '')
+            + (p.version ? ' <span style="font-weight:400;font-size:0.78rem;color:#6e7681">· ' + escapeHtml(p.version) + '</span>' : '')
+            + (p.install_date ? ' <span style="font-weight:400;font-size:0.78rem;color:#6e7681">· ' + escapeHtml(p.install_date) + '</span>' : '')
+            + '</div>'
             + (p.last_used ? '<span style="font-size:0.78rem;color:#8b949e;white-space:nowrap;flex-shrink:0">' + _t('software.last_used') + ' ' + escapeHtml(p.last_used) + '</span>' : '')
             + '</div>'
             + '<div style="display:flex;align-items:center;gap:8px;margin-top:3px">'
@@ -1523,11 +1528,6 @@ function renderSoftwareList(programs) {
             + (p.install_location ? escapeHtml(p.install_location) : '')
             + '</div>'
             + '<span style="font-size:0.92rem;font-weight:600;color:#d29922;white-space:nowrap;flex-shrink:0">' + (p.size_fmt || '') + '</span>'
-            + '</div>'
-            + '<div style="font-size:0.75rem;color:#6e7681;margin-top:2px">'
-            + (p.publisher ? escapeHtml(p.publisher) + ' · ' : '')
-            + (p.version ? escapeHtml(p.version) + ' · ' : '')
-            + (p.install_date || '')
             + '</div></div>'
             + '</div>';
     });
