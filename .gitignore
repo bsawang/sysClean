@@ -22,6 +22,12 @@ Thumbs.db
 # Environment
 .env
 .env.local
+.venv/
 
 # Logs
 *.log
+logs/*
+!logs/.gitkeep
+
+# Superpowers
+.superpowers/

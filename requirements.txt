@@ -1,0 +1,5 @@
+flask>=3.0
+psutil>=5.9
+
+# 中国大陆用户可使用镜像加速:
+# pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -r requirements.txt
