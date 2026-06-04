@@ -1,6 +1,6 @@
 ---
 name: sysclean
-description: C 盘空间清理工具 — Web UI 选择分类扫描，实时进度，风险标注，确认后清理
+description: C 盘空间清理工具 — 清理C盘、磁盘空间不足、临时文件/缓存/垃圾文件清理，Web UI 分类扫描，风险标注，确认后执行
 ---
 
 # SysClean — C 盘空间清理 Skill
