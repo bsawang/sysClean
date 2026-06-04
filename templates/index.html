@@ -991,7 +991,7 @@ async function toggleSandbox() {
       var d = await r.json();
       if (d.status === 'started') {
         badge.style.display = 'inline';
-        status.textContent = d.path.split('\\').pop();
+        status.textContent = d.path ? d.path.split('\\').pop() : '';
         btn.innerHTML = '🛡️ <span data-i18n="sandbox.exit">退出沙盒模式</span>';
         // Reload disk info
         htmx.trigger('#disk-card', 'htmx:load');
@@ -1012,7 +1012,7 @@ async function checkSandbox() {
     var d = await r.json();
     if (d.enabled) {
       document.getElementById('sandbox-badge').style.display = 'inline';
-      document.getElementById('sandbox-status').textContent = d.path.split('\\').pop();
+      document.getElementById('sandbox-status').textContent = d.path ? d.path.split('\\').pop() : '';
       document.getElementById('btn-sandbox').innerHTML = '🛡️ <span data-i18n="sandbox.exit">退出沙盒模式</span>';
     }
   } catch(e) {}
