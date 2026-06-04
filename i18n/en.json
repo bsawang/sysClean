@@ -99,6 +99,7 @@
   "search.rebuild": "Rebuild",
   "search.stop": "Stop",
   "search.start": "Start",
+  "search.open_folder": "Open in File Explorer",
   "search.rebuilding": "Rebuilding...",
   "search.stopped": "Service stopped",
   "search.ready": "Ready",

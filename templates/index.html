@@ -718,7 +718,10 @@ function refreshSearchStatus() {
         .then(function(r) { return r.json(); })
         .then(function(d) {
             document.getElementById('search-size').textContent = d.size_fmt;
-            document.getElementById('search-path').textContent = d.real_path || '';
+            var p = d.real_path || '';
+            var parentDir = p.substring(0, p.lastIndexOf('\\'));
+            var fileUrl = 'file:///' + parentDir.replace(/\\/g, '/');
+            document.getElementById('search-path').innerHTML = '<a href="' + fileUrl + '" style="color:#58a6ff;text-decoration:none" title="' + _t('search.open_folder') + '">' + escapeHtml(p) + '</a>';
             searchServiceRunning = d.service_running === true && !d.rebuilding;
             var toggle = document.getElementById('search-service-toggle');
             var label = document.getElementById('search-toggle-label');
