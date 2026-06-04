@@ -314,6 +314,73 @@ def api_sandbox_status():
 
 
 # ---------------------------------------------------------------------------
+# Recycle Bin API (Windows Shell)
+# ---------------------------------------------------------------------------
+
+# SHQueryRecycleBin flags
+SHERB_NOCONFIRMATION = 0x00000001
+SHERB_NOPROGRESSUI = 0x00000002
+SHERB_NOSOUND = 0x00000004
+
+
+class SHQUERYRBINFO(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", ctypes.c_uint),
+        ("i64Size", ctypes.c_longlong),
+        ("i64NumItems", ctypes.c_longlong),
+    ]
+
+
+def _query_recycle_bin():
+    """Query the Recycle Bin for total size and item count.
+
+    Returns:
+        (size_bytes, item_count) tuple, or (0, 0) on failure.
+    """
+    try:
+        rbinfo = SHQUERYRBINFO()
+        rbinfo.cbSize = ctypes.sizeof(SHQUERYRBINFO)
+        result = ctypes.windll.shell32.SHQueryRecycleBinW(
+            None, ctypes.byref(rbinfo)
+        )
+        if result == 0:
+            return rbinfo.i64Size, rbinfo.i64NumItems
+    except Exception:
+        pass
+    return 0, 0
+
+
+@app.route("/api/recycle/status")
+def api_recycle_status():
+    """Return Recycle Bin size and item count."""
+    size, count = _query_recycle_bin()
+    return jsonify({
+        "size": size,
+        "size_fmt": _format_size(size),
+        "count": count,
+    })
+
+
+@app.route("/api/recycle/empty", methods=["POST"])
+def api_recycle_empty():
+    """Empty the Recycle Bin. Guarded by global operation lock."""
+    if not acquire_operation("emptying_recycle"):
+        return jsonify({"error": "另一个操作正在进行中"}), 409
+    try:
+        # SHEmptyRecycleBinW with flags: no confirm, no progress, no sound
+        result = ctypes.windll.shell32.SHEmptyRecycleBinW(
+            None, None,
+            SHERB_NOCONFIRMATION | SHERB_NOPROGRESSUI | SHERB_NOSOUND,
+        )
+        if result == 0:
+            return jsonify({"status": "emptied"})
+        else:
+            return jsonify({"error": f"清空回收站失败 (code {result})"}), 500
+    finally:
+        release_operation()
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
