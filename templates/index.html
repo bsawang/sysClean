@@ -529,9 +529,9 @@
         <div class="action-buttons" style="margin-top:12px;padding-top:12px;flex-shrink:0">
           <button class="btn btn-ghost btn-sm" onclick="selectAllSoftware(true)" data-i18n="btn.select_all">全选</button>
           <button class="btn btn-ghost btn-sm" onclick="selectAllSoftware(false)" data-i18n="btn.deselect_all">全不选</button>
-          <button class="btn btn-danger btn-sm btn-operation" onclick="startUninstall()">
+          <button class="btn btn-danger btn-sm btn-operation" onclick="startUninstall()" id="btn-uninstall">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-            <span data-i18n="software.uninstall">卸载选中</span>
+            <span data-i18n="software.uninstall">卸载选中</span> <span id="uninstall-count" style="font-weight:700"></span>
           </button>
         </div>
 
@@ -1659,12 +1659,18 @@ function getFilteredSoftware() {
     return list;
 }
 
+function refreshUninstallCount() {
+    var n = document.querySelectorAll('.software-cb:checked').length;
+    document.getElementById('uninstall-count').textContent = n ? '(' + n + ')' : '';
+}
+
 function toggleSoftwareCb(row) {
     var cb = row.querySelector('.software-cb');
     cb.checked = !cb.checked;
     row.dataset.checked = cb.checked ? '1' : '0';
     if (cb.checked) { row.classList.add('selected'); }
     else { row.classList.remove('selected'); }
+    refreshUninstallCount();
 }
 
 function selectAllSoftware(select) {
@@ -1675,6 +1681,7 @@ function selectAllSoftware(select) {
         if (select) { row.classList.add('selected'); }
         else { row.classList.remove('selected'); }
     });
+    refreshUninstallCount();
 }
 
 function startUninstall() {
@@ -1734,6 +1741,9 @@ function startUninstall() {
                         }
                         if (ev.type === 'uninstall_complete') {
                             document.getElementById('uninstall-progress-fill').style.width = '100%';
+                            setTimeout(function() {
+                                document.getElementById('software-progress').classList.add('hidden');
+                            }, 1500);
                         }
                     } catch(e) {}
                 });
