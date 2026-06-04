@@ -104,7 +104,7 @@
   "search.ready": "Ready",
   "search.confirm": "Are you sure you want to rebuild the Search Index?\n\nWindows Search will be unavailable during rebuilding. The process may take several hours with high CPU usage.\n\nThis operation cannot be undone!",
   "software.title": "Software Manager",
-  "software.manage": "Manage Programs",
+  "software.manage": "Manage",
   "software.uninstall": "Uninstall Selected",
   "software.loading": "Loading installed programs...",
   "software.empty": "No installed programs found",
