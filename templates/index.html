@@ -747,6 +747,21 @@ function selectAllItems(select) {
   updateSelectedCount();
 }
 
+
+// ====================================================================
+// Exit sandbox from confirm modal (return to results)
+// ====================================================================
+function sandboxExitToResults() {
+  fetch("/api/sandbox/stop", {method:"POST"}).then(function(r){return r.json();}).then(function(d){
+    if(d.status==="stopped"){
+      document.getElementById("sandbox-badge").style.display="none";
+      document.getElementById("sandbox-status").textContent="";
+      document.getElementById("btn-sandbox").innerHTML="🛡 <span data-i18n=\"sandbox.enter\"></span>";
+      refreshDiskCard();
+      showView("results");
+    }
+  }).catch(function(){});
+}
 // ====================================================================
 // Confirm clean
 // ====================================================================
@@ -771,7 +786,7 @@ function confirmClean() {
       document.getElementById('modal-warning-box').style.display = 'none';
       document.getElementById('confirm-actions').innerHTML =
         '<button class="btn btn-ghost" onclick="showView(\'results\')">' + _t('btn.cancel') + '</button>'
-        + '<button class="btn btn-primary" onclick="toggleSandbox()" style="background:#d29922">🛡 ' + _t('sandbox.exit') + '</button>';
+        + '<button class="btn btn-primary" onclick="sandboxExitToResults()" style="background:#d29922">🛡 ' + _t('sandbox.exit') + '</button>';
       showView('confirm');
     } else {
       var groups = {};
