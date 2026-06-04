@@ -1743,6 +1743,7 @@ function startUninstall() {
                             document.getElementById('uninstall-progress-fill').style.width = '100%';
                             setTimeout(function() {
                                 document.getElementById('software-progress').classList.add('hidden');
+                                showSoftwareView();
                             }, 1500);
                         }
                     } catch(e) {}
