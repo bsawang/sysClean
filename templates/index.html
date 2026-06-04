@@ -210,15 +210,15 @@
 
       <!-- Recycle Bin card -->
       <div class="op-card" id="recycle-section">
-        <div class="op-card-header">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="op-card-header" style="background:rgba(248,81,73,0.08)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f85149" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
           </svg>
           <span class="op-card-label" data-i18n="recycle.title">Recycle Bin</span>
-          <span id="recycle-size" style="font-size:1.05rem;font-weight:600;color:#d29922">-</span>
+          <span id="recycle-size" style="font-size:1.05rem;font-weight:600;color:#f85149">-</span>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:6px">
-          <button class="btn btn-danger btn-sm btn-operation" onclick="emptyRecycleBin()" style="font-size:0.82rem;padding:4px 14px">
+          <button class="btn btn-ghost btn-sm btn-operation" onclick="emptyRecycleBin()" style="font-size:0.82rem;padding:4px 14px;color:#f85149">
             <span data-i18n="recycle.empty">清空</span>
           </button>
         </div>
@@ -226,12 +226,12 @@
 
       <!-- Search Index card -->
       <div class="op-card" id="search-section">
-        <div class="op-card-header">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="op-card-header" style="background:rgba(88,166,255,0.08)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
           </svg>
           <span class="op-card-label" data-i18n="search.title">Search Index</span>
-          <span id="search-size" style="font-size:1.05rem;font-weight:600;color:#d29922">-</span>
+          <span id="search-size" style="font-size:1.05rem;font-weight:600;color:#58a6ff">-</span>
         </div>
         <div id="search-path" style="font-size:0.88rem;color:#8b949e;margin-top:6px;word-break:break-all;line-height:1.4;font-family:monospace"></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
@@ -240,7 +240,7 @@
             <span class="toggle-track"><span class="toggle-thumb"></span></span>
             <span class="toggle-label" id="search-toggle-label" data-i18n="search.stop">停止</span>
           </label>
-          <button class="btn btn-danger btn-sm btn-operation" onclick="rebuildSearchIndex()" style="font-size:0.82rem;padding:4px 14px" id="btn-rebuild-index">
+          <button class="btn btn-ghost btn-sm btn-operation" onclick="rebuildSearchIndex()" style="font-size:0.82rem;padding:4px 14px;color:#f85149" id="btn-rebuild-index">
             <span data-i18n="search.rebuild">重建</span>
           </button>
         </div>
@@ -248,15 +248,15 @@
 
       <!-- Software card -->
       <div class="op-card" id="software-section">
-        <div class="op-card-header">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div class="op-card-header" style="background:rgba(210,153,34,0.08)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d29922" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
           </svg>
           <span class="op-card-label" data-i18n="software.title">Software</span>
           <span id="software-count" style="font-size:1.05rem;font-weight:600;color:#d29922">-</span>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:6px">
-          <button class="btn btn-primary btn-sm btn-operation" onclick="showSoftwareView()" style="font-size:0.82rem;padding:4px 14px">
+          <button class="btn btn-ghost btn-sm btn-operation" onclick="showSoftwareView()" style="font-size:0.82rem;padding:4px 14px;color:#d29922">
             <span data-i18n="software.manage">管理</span>
           </button>
         </div>
