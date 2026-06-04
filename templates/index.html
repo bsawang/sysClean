@@ -627,6 +627,7 @@ function startPolling() {
 
           if (items.length > 0) {
             scanItems = items;
+            saveState('results', JSON.stringify({ items: items }));
             setTimeout(function() {
               updateSteps(3);
               renderResults({ items: items, total: items.length });
@@ -1070,25 +1071,52 @@ async function checkSandbox() {
 }
 
 // ====================================================================
+// Session persistence (survives page refresh)
+// ====================================================================
+function saveState(viewName, data) {
+  if (viewName) sessionStorage.setItem('sysclean_view', viewName);
+  if (data) sessionStorage.setItem('sysclean_data', data);
+}
+function clearState() {
+  sessionStorage.removeItem('sysclean_view');
+  sessionStorage.removeItem('sysclean_data');
+}
+function restoreState() {
+  var viewName = sessionStorage.getItem('sysclean_view');
+  var data = sessionStorage.getItem('sysclean_data');
+  if (viewName === 'results' && data) {
+    try {
+      var parsed = JSON.parse(data);
+      if (parsed && parsed.items && parsed.items.length > 0) {
+        scanItems = parsed.items;
+        renderResults({ items: parsed.items, total: parsed.items.length });
+        updateSteps(3);
+        showView('results');
+        return true;
+      }
+    } catch(e) {}
+  }
+  return false;
+}
+
+// ====================================================================
 // Initialization
 // ====================================================================
 document.addEventListener('DOMContentLoaded', function() {
   var urlLang = new URLSearchParams(window.location.search).get('lang') || '{{ lang }}';
   loadTranslations(urlLang);
 
-  // Fetch initial disk info for before state
   fetch('/api/disk').then(function(r) { return r.json(); }).then(function(data) {
     diskBefore = data;
   }).catch(function(e) { console.error('refreshDiskCard:', e); });
 
-  // Check if sandbox is active
   checkSandbox();
-
-  // Load disk card
   refreshDiskCard();
 
-  // Show empty view by default
-  showView('empty');
+  // Restore previous state if available
+  if (!restoreState()) {
+    showView('empty');
+  }
 });
 </script>
 
