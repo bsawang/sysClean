@@ -1306,16 +1306,17 @@ function showComplete(data) {
   window._cleanSortAsc = false;
   renderCleanDetailList();
 
-  // Fetch updated disk info for before/after comparison
+  // Fetch updated disk info and recycle/search status
   fetch('/api/disk').then(function(r) { return r.json(); }).then(function(diskAfter) {
     if (diskBefore) {
       renderDiskCompare(diskBefore, diskAfter);
     } else {
-      // fallback: just use after as baseline
       renderDiskCompare(diskAfter, diskAfter);
     }
+    // Refresh recycle bin and search status after cleanup
+    refreshCompleteHints();
+    refreshRecycleStatus();
   }).catch(function(e) { console.error('refreshDiskCard:', e); });
-  refreshCompleteHints();
 }
 
 function renderCleanDetailList() {
