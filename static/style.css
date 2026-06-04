@@ -744,6 +744,7 @@ a:hover { text-decoration: underline; }
 #software-list .result-item { display: flex; align-items: center; padding: 8px 12px; cursor: pointer; }
 #software-list .result-item:hover { background: #1c2128; }
 #software-list .soft-item.selected { background: rgba(88,166,255,0.08); }
+#drive-filter .btn.active { background: rgba(88,166,255,0.15); color: #58a6ff; border-color: rgba(88,166,255,0.3); }
 #software-list .soft-item.selected:hover { background: rgba(88,166,255,0.12); }
 
 /* Completion hints */

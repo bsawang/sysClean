@@ -521,6 +521,8 @@
           <button class="btn btn-ghost btn-sm" onclick="sortSoftware('size')" style="font-size:0.78rem;white-space:nowrap" id="sort-size"><span data-i18n="software.sort_size">大小</span> ↓</button>
         </div>
 
+        <div id="drive-filter" style="display:flex;gap:4px;margin-bottom:8px;flex-shrink:0;flex-wrap:wrap;min-height:0"></div>
+
         <div id="software-loading" style="text-align:center;padding:32px;color:#8b949e" data-i18n="software.loading">Loading...</div>
 
         <div id="software-list" style="flex:1;overflow-y:auto;border:1px solid #21262d;border-radius:8px;min-height:200px"></div>
@@ -1512,8 +1514,49 @@ function showSoftwareView() {
             var adminWarn = document.getElementById('software-admin-warn');
             adminWarn.style.display = d.admin ? 'none' : '';
 
+            // Build drive filter
+            var drives = {};
+            allPrograms.forEach(function(p) {
+                if (p.install_location) {
+                    var d = p.install_location.charAt(0).toUpperCase();
+                    if (d.match(/[A-Z]/)) drives[d] = (drives[d] || 0) + 1;
+                }
+            });
+            var dfEl = document.getElementById('drive-filter');
+            var dKeys = Object.keys(drives).sort();
+            dfEl.innerHTML = '';
+            if (dKeys.length > 1) {
+                var allBtn = document.createElement('button');
+                allBtn.className = 'btn btn-ghost btn-sm' + (window._driveFilter === undefined ? ' active' : '');
+                allBtn.style.cssText = 'font-size:0.72rem;padding:2px 8px';
+                allBtn.textContent = 'All';
+                allBtn.onclick = function() { window._driveFilter = undefined; updateDriveFilter(); };
+                dfEl.appendChild(allBtn);
+                dKeys.forEach(function(d) {
+                    var btn = document.createElement('button');
+                    btn.className = 'btn btn-ghost btn-sm' + (window._driveFilter === d ? ' active' : '');
+                    btn.style.cssText = 'font-size:0.72rem;padding:2px 8px';
+                    btn.textContent = d + ': ' + drives[d];
+                    btn.onclick = function() { window._driveFilter = (window._driveFilter === d) ? undefined : d; updateDriveFilter(); };
+                    dfEl.appendChild(btn);
+                });
+            }
             renderSoftwareList(getFilteredSoftware());
         });
+}
+
+function updateDriveFilter() {
+    // Visual update for drive filter buttons
+    document.querySelectorAll('#drive-filter button').forEach(function(btn) {
+        var txt = btn.textContent;
+        if (txt === 'All') {
+            btn.className = 'btn btn-ghost btn-sm' + (window._driveFilter === undefined ? ' active' : '');
+        } else {
+            var d = txt.split(':')[0];
+            btn.className = 'btn btn-ghost btn-sm' + (window._driveFilter === d ? ' active' : '');
+        }
+    });
+    renderSoftwareList(getFilteredSoftware());
 }
 
 function renderSoftwareList(programs) {
@@ -1569,7 +1612,14 @@ function sortSoftware(field) {
 
 function getFilteredSoftware() {
     var q = document.getElementById('software-filter').value.toLowerCase();
-    var list = allPrograms.filter(function(p) { return p.name.toLowerCase().indexOf(q) !== -1; });
+    var list = allPrograms.filter(function(p) {
+        if (q && p.name.toLowerCase().indexOf(q) === -1) return false;
+        if (window._driveFilter && p.install_location) {
+            var d = p.install_location.charAt(0).toUpperCase();
+            if (d !== window._driveFilter) return false;
+        }
+        return true;
+    });
     var field = _softwareSortField;
     list.sort(function(a, b) {
         var va, vb;
