@@ -1511,8 +1511,8 @@ function showSoftwareView() {
 function renderSoftwareList(programs) {
     var html = '';
     programs.forEach(function(p) {
-        html += '<div class="result-item soft-item" style="border-bottom:1px solid #21262d" onclick="toggleSoftwareCb(this)" data-checked="1">'
-            + '<input type="checkbox" class="software-cb" data-name="' + escapeHtml(p.name) + '" checked>'
+        html += '<div class="result-item soft-item" style="border-bottom:1px solid #21262d" onclick="toggleSoftwareCb(this)" data-checked="0">'
+            + '<input type="checkbox" class="software-cb" data-name="' + escapeHtml(p.name) + '">'
             + '<div style="flex:1;min-width:0;margin-left:8px">'
             + '<div style="display:flex;align-items:baseline;gap:8px">'
             + '<div style="flex:1;font-size:0.92rem;font-weight:600;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
